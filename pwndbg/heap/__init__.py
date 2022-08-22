@@ -5,6 +5,7 @@ import pwndbg.symbol
 
 current = None
 
+# TODO: The rest of these should probably go in init()
 main_arena = pwndbg.config.Parameter('main_arena', "0", 'main_arena address for heuristics', 'heap')
 
 thread_arena = pwndbg.config.Parameter('thread_arena', "0", 'thread_arena value for heuristics', 'heap')
@@ -15,7 +16,11 @@ tcache = pwndbg.config.Parameter('tcache', "0", 'tcache value for heuristics', '
 
 global_max_fast = pwndbg.config.Parameter('global_max_fast', "0", 'global_max_fast address for heuristics', 'heap')
 
-symbol_list = pwndbg.config.get_params('heap')
+symbol_list = None
+@pwndbg.decorators.init
+def init():
+    global symbol_list
+    symbol_list = pwndbg.config.get_params('heap')
 
 heap_chain_limit = pwndbg.config.Parameter('heap-dereference-limit', 8, 'number of bins to dereference', 'heap')
 

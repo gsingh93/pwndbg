@@ -37,6 +37,7 @@ def lookup_types(*types):
     raise exc
 
 
+@pwndbg.decorators.init
 @pwndbg.events.new_objfile
 @pwndbg.events.start
 @pwndbg.events.stop
@@ -49,7 +50,7 @@ def update():
     module.ushort = lookup_types('unsigned short', 'ushort', 'u16', 'uint16')
     module.uint   = lookup_types('unsigned int', 'uint', 'u32', 'uint32')
     module.void   = lookup_types('void', '()')
-    
+
     module.uint8  = module.uchar
     module.uint16 = module.ushort
     module.uint32 = module.uint
@@ -78,11 +79,11 @@ def update():
 
     module.ptrsize = pvoid.sizeof
 
-    if pvoid.sizeof == 4: 
+    if pvoid.sizeof == 4:
         module.ptrdiff = module.uint32
         module.size_t = module.uint32
         module.ssize_t = module.int32
-    elif pvoid.sizeof == 8: 
+    elif pvoid.sizeof == 8:
         module.ptrdiff = module.uint64
         module.size_t = module.uint64
         module.ssize_t = module.int64
@@ -91,7 +92,7 @@ def update():
     module.null = gdb.Value(0).cast(void)
 
 # Call it once so we load all of the types
-update()
+#update()
 
 # Trial and error until things work
 blacklist = ['regexp.h', 'xf86drm.h', 'libxl_json.h', 'xf86drmMode.h',

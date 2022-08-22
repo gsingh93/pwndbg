@@ -112,6 +112,7 @@ linux_amd64_srop = ABI(['rax'], 4, 0)
 linux_arm_srop = ABI(['r7'], 4, 0)
 
 
+@pwndbg.decorators.init
 @pwndbg.events.start
 def update():
     global abi
@@ -164,4 +165,4 @@ def LinuxOnly(default=None):
 
 
 # Update when starting the gdb to show warning message for non-Linux ABI user.
-update()
+#update()

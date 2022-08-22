@@ -60,9 +60,6 @@ class StartEvent:
         self.on_new_objfile()
 
 
-gdb.events.start = StartEvent()
-
-
 class EventWrapper:
     """
     Wrapper for GDB events which may not exist on older GDB versions but we still can
@@ -94,30 +91,6 @@ class EventWrapper:
             f()
 
 
-# Old GDBs doesn't have gdb.events.before_prompt, so we will emulate it using gdb.prompt_hook
-before_prompt_event = EventWrapper('before_prompt')
-gdb.events.before_prompt = before_prompt_event
-
-
-# In order to support reloading, we must be able to re-fire
-# all 'objfile' and 'stop' events.
-registered = {
-    gdb.events.exited: [],
-    gdb.events.cont: [],
-    gdb.events.new_objfile: [],
-    gdb.events.stop: [],
-    gdb.events.start: [],
-    gdb.events.before_prompt: []  # The real event might not exist, but we wrap it
-}
-
-# GDB 7.9 and above only
-try:
-    registered[gdb.events.memory_changed] = []
-    registered[gdb.events.register_changed] = []
-except (NameError, AttributeError):
-    pass
-
-
 class Pause:
     def __enter__(self, *a, **kw):
         global pause
@@ -136,6 +109,8 @@ objfile_cache = dict()
 
 
 def connect(func, event_handler, name=''):
+    import sys
+
     if debug:
         print("Connecting", func.__name__, event_handler)
 
@@ -171,17 +146,25 @@ def connect(func, event_handler, name=''):
     return func
 
 
-def exit(func):        return connect(func, gdb.events.exited, 'exit')
-def cont(func):        return connect(func, gdb.events.cont, 'cont')
-def new_objfile(func): return connect(func, gdb.events.new_objfile, 'obj')
-def stop(func):        return connect(func, gdb.events.stop, 'stop')
-def start(func):       return connect(func, gdb.events.start, 'start')
 
+# TODO: How to handle this?
+# def exit(func):        return connect(func, gdb.events.exited, 'exit')
+# def cont(func):        return connect(func, gdb.events.cont, 'cont')
+# def new_objfile(func): return connect(func, gdb.events.new_objfile, 'obj')
+# def stop(func):        return connect(func, gdb.events.stop, 'stop')
+# def start(func):       return connect(func, gdb.events.start, 'start')
 
-before_prompt = partial(connect, event_handler=gdb.events.before_prompt, name='before_prompt')
+def exit(func):        return func
+def cont(func):        return func
+def new_objfile(func): return func
+def stop(func):        return func
+def start(func):       return func
 
 
 def reg_changed(func):
+    if 'unittest' in sys.modules:
+        return func
+
     try:
         return connect(func, gdb.events.register_changed, 'reg_changed')
     except AttributeError:
@@ -189,6 +172,9 @@ def reg_changed(func):
 
 
 def mem_changed(func):
+    if 'unittest' in sys.modules:
+        return func
+
     try:
         return connect(func, gdb.events.memory_changed, 'mem_changed')
     except AttributeError:
@@ -203,9 +189,6 @@ def log_objfiles(ofile=None):
 
     print("objfile: %r" % name)
     gdb.execute('info sharedlibrary')
-
-
-gdb.events.new_objfile.connect(log_objfiles)
 
 
 def after_reload(start=True):
@@ -246,3 +229,38 @@ def _start_stop():
 def _reset_objfiles():
     global objfile_cache
     objfile_cache = dict()
+
+# TODO: Remove this
+def before_prompt(func):
+    return func
+
+@pwndbg.decorators.init
+def init():
+    gdb.events.start = StartEvent()
+
+    # Old GDBs doesn't have gdb.events.before_prompt, so we will emulate it using gdb.prompt_hook
+    before_prompt_event = EventWrapper('before_prompt')
+    gdb.events.before_prompt = before_prompt_event
+
+
+    # In order to support reloading, we must be able to re-fire
+    # all 'objfile' and 'stop' events.
+    registered = {
+        gdb.events.exited: [],
+        gdb.events.cont: [],
+        gdb.events.new_objfile: [],
+        gdb.events.stop: [],
+        gdb.events.start: [],
+        gdb.events.before_prompt: []  # The real event might not exist, but we wrap it
+    }
+
+    # GDB 7.9 and above only
+    try:
+        registered[gdb.events.memory_changed] = []
+        registered[gdb.events.register_changed] = []
+    except (NameError, AttributeError):
+        pass
+
+    before_prompt = partial(connect, event_handler=gdb.events.before_prompt, name='before_prompt')
+
+    gdb.events.new_objfile.connect(log_objfiles)

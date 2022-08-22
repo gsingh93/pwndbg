@@ -18,3 +18,10 @@ def only_after_first_prompt(value_before=None):
                 return value_before
         return wrapper
     return decorator
+
+def init(func):
+    import sys
+    if 'unittest' not in sys.modules:
+        func()
+
+    return func

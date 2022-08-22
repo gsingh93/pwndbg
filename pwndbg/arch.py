@@ -12,10 +12,15 @@ current = 'i386'
 qemu    = current
 ptrmask = 0xfffffffff
 endian  = 'little'
-ptrsize = pwndbg.typeinfo.ptrsize
+ptrsize = None
 fmt     = '=I'
 native_endian = str(sys.byteorder)
 
+
+@pwndbg.decorators.init
+def init():
+    global ptrsize
+    ptrsize = pwndbg.typeinfo.ptrsize
 
 def _get_arch():
     not_exactly_arch = False

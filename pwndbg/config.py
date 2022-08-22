@@ -26,37 +26,46 @@ import gdb
 
 import pwndbg.decorators
 
+triggers = collections.defaultdict(lambda: [])
 TYPES = collections.OrderedDict()
 
-# The value is a plain boolean.
-# The Python boolean values, True and False are the only valid values.
-TYPES[bool] = gdb.PARAM_BOOLEAN
+@pwndbg.decorators.init
+def init():
+    # The value is a plain boolean.
+    # The Python boolean values, True and False are the only valid values.
+    TYPES[bool] = gdb.PARAM_BOOLEAN
 
-# The value is an integer.
-# This is like PARAM_INTEGER, except 0 is interpreted as itself.
-TYPES[int] = gdb.PARAM_ZINTEGER
+    # The value is an integer.
+    # This is like PARAM_INTEGER, except 0 is interpreted as itself.
+    TYPES[int] = gdb.PARAM_ZINTEGER
 
-# The value is a string.
-# When the user modifies the string, any escape sequences,
-# such as ‘\t’, ‘\f’, and octal escapes, are translated into
-# corresponding characters and encoded into the current host charset.
-TYPES[str] = gdb.PARAM_STRING
+    # The value is a string.
+    # When the user modifies the string, any escape sequences,
+    # such as ‘\t’, ‘\f’, and octal escapes, are translated into
+    # corresponding characters and encoded into the current host charset.
+    TYPES[str] = gdb.PARAM_STRING
 
-triggers = collections.defaultdict(lambda: [])
+# TODO: Need this because it relies on the real Parameter class
+if 'unittest' in sys.modules:
+    class Trigger:
+        def __init__(self, *args, **kwargs):
+            pass
 
+        def __call__(self, function):
+            return function
+else:
+    class Trigger:
+        def __init__(self, names):
+            if not isinstance(names, list):
+                names = [names]
+            names = list(map(lambda n: n.name if isinstance(n, Parameter) else n, names))
+            self.names = list(map(lambda n: n.replace('-', '_'), names))
 
-class Trigger:
-    def __init__(self, names):
-        if not isinstance(names, list):
-            names = [names]
-        names = list(map(lambda n: n.name if isinstance(n, Parameter) else n, names))
-        self.names = list(map(lambda n: n.replace('-', '_'), names))
-
-    def __call__(self, function):
-        global triggers
-        for name in self.names:
-            triggers[name].append(function)
-        return function
+        def __call__(self, function):
+            global triggers
+            for name in self.names:
+                triggers[name].append(function)
+            return function
 
 
 def get_param(value):
@@ -85,157 +94,164 @@ member_remap = {
     'value': '_value',
     'raw_value': 'value'
 }
-@total_ordering
-class Parameter(gdb.Parameter):
-    """
-    For python2, we can not store unicode type in self.value since the implementation limitation of gdb python.
-    We use self._value as the converted cache and set __getattribute__() and __setattr__() to remap variables.
 
-    Since GDB will set gdb.Parameter.value to user input and call get_set_string(),
-    we use self.raw_value to map back to gdb.Parameter.value
+# TODO: Need this because we can't extend gdb.Parameter in test
+if 'unittest' in sys.modules:
+    class Parameter:
+        def __init__(self, *args, **kwargs):
+            pass
+else:
+    @total_ordering
+    class Parameter(gdb.Parameter):
+        """
+        For python2, we can not store unicode type in self.value since the implementation limitation of gdb python.
+        We use self._value as the converted cache and set __getattribute__() and __setattr__() to remap variables.
 
-    That is, we remap
-    * Parameter.value -> gdb.Parameter._value (if it is string type, always keep unicode)
-        All getter return this
-    * Parameter.raw_value -> gdb.Parameter.value
-        Only used in get_set_string()
-    """
-    def __init__(self, name, default, docstring, scope='config'):
-        self.docstring = docstring.strip()
-        self.optname = name
-        self.name = name.replace('-', '_')
-        self.default = default
-        self.set_doc = 'Set ' + docstring
-        self.show_doc = docstring + ':'
-        super(Parameter, self).__init__(name,
-                                        gdb.COMMAND_SUPPORT,
-                                        get_param(default))
-        self.value = default
-        self.scope = scope
-        setattr(module, self.name, self)
+        Since GDB will set gdb.Parameter.value to user input and call get_set_string(),
+        we use self.raw_value to map back to gdb.Parameter.value
 
-    @property
-    def native_value(self):
-        return value_to_gdb_native(self.value)
+        That is, we remap
+        * Parameter.value -> gdb.Parameter._value (if it is string type, always keep unicode)
+            All getter return this
+        * Parameter.raw_value -> gdb.Parameter.value
+            Only used in get_set_string()
+        """
+        def __init__(self, name, default, docstring, scope='config'):
+            self.docstring = docstring.strip()
+            self.optname = name
+            self.name = name.replace('-', '_')
+            self.default = default
+            self.set_doc = 'Set ' + docstring
+            self.show_doc = docstring + ':'
+            super(Parameter, self).__init__(name,
+                                            gdb.COMMAND_SUPPORT,
+                                            get_param(default))
+            self.value = default
+            self.scope = scope
+            setattr(module, self.name, self)
 
-    @property
-    def native_default(self):
-        return value_to_gdb_native(self.default)
+        @property
+        def native_value(self):
+            return value_to_gdb_native(self.value)
 
-    @property
-    def is_changed(self):
-        return self.value != self.default
+        @property
+        def native_default(self):
+            return value_to_gdb_native(self.default)
 
-    def __setattr__(self, name, value):
-        new_name = member_remap.get(name, name)
-        new_name = str(new_name) # Python2 only accept str type as key
-        return super(Parameter, self).__setattr__(new_name, value)
+        @property
+        def is_changed(self):
+            return self.value != self.default
 
-    def __getattribute__(self, name):
-        new_name = member_remap.get(name, name)
-        new_name = str(new_name) # Python2 only accept str type as key
-        return super(Parameter, self).__getattribute__(new_name)
+        def __setattr__(self, name, value):
+            new_name = member_remap.get(name, name)
+            new_name = str(new_name) # Python2 only accept str type as key
+            return super(Parameter, self).__setattr__(new_name, value)
 
-    def get_set_string(self):
-        value = self.raw_value
+        def __getattribute__(self, name):
+            new_name = member_remap.get(name, name)
+            new_name = str(new_name) # Python2 only accept str type as key
+            return super(Parameter, self).__getattribute__(new_name)
 
-        # For string value, convert utf8 byte string to unicode.
-        if isinstance(value, bytes):
-            value = codecs.decode(value, 'utf-8')
+        def get_set_string(self):
+            value = self.raw_value
 
-        # Remove surrounded ' and " characters
-        if isinstance(value, str):
-            # The first character must be ' or " and ends with the same character.
-            # See PR #404 for more information
-            pattern = r"^(?P<quote>[\"'])(?P<content>.*?)(?P=quote)$"
+            # For string value, convert utf8 byte string to unicode.
+            if isinstance(value, bytes):
+                value = codecs.decode(value, 'utf-8')
 
-            value = re.sub(pattern, r"\g<content>", value)
+            # Remove surrounded ' and " characters
+            if isinstance(value, str):
+                # The first character must be ' or " and ends with the same character.
+                # See PR #404 for more information
+                pattern = r"^(?P<quote>[\"'])(?P<content>.*?)(?P=quote)$"
 
-        # Write back to self.value
-        self.value = value
+                value = re.sub(pattern, r"\g<content>", value)
 
-        for trigger in triggers[self.name]:
-            trigger()
+            # Write back to self.value
+            self.value = value
 
-        if not pwndbg.decorators.first_prompt:
-            return ''
-        return 'Set %s to %r' % (self.docstring, self.value)
+            for trigger in triggers[self.name]:
+                trigger()
 
-    def get_show_string(self, svalue):
-        return 'Sets %s (currently: %r)' % (self.docstring, self.value)
+            if not pwndbg.decorators.first_prompt:
+                return ''
+            return 'Set %s to %r' % (self.docstring, self.value)
 
-    def revert_default(self):
-        self.value = self.default
+        def get_show_string(self, svalue):
+            return 'Sets %s (currently: %r)' % (self.docstring, self.value)
 
-    # TODO: use __getattribute__ to remapping all member function to self.value's member?
-    # Then, we can use param.member() just like param.value.member()
+        def revert_default(self):
+            self.value = self.default
 
-    # The str type member function, used in color/__init__.py
-    def split(self, *args, **kargs):
-        return str(self).split(*args, **kargs)
+        # TODO: use __getattribute__ to remapping all member function to self.value's member?
+        # Then, we can use param.member() just like param.value.member()
 
-    # Casting
-    def __int__(self):
-        return int(self.value)
+        # The str type member function, used in color/__init__.py
+        def split(self, *args, **kargs):
+            return str(self).split(*args, **kargs)
 
-    def __str__(self):
-        return str(self.value)
+        # Casting
+        def __int__(self):
+            return int(self.value)
 
-    def __bool__(self):
-        return bool(self.value)
+        def __str__(self):
+            return str(self.value)
 
-    # Compare operators
-    # Ref: http://portingguide.readthedocs.io/en/latest/comparisons.html
-    # If other is Parameter, comparing by optname. Used in `sorted` in `config` command.
-    # Otherwise, compare `self.value` with `other`
-    def __eq__(self, other):
-        if isinstance(other, gdb.Parameter):
-            return self.optname == other.optname
-        else:
-            return self.value == other
+        def __bool__(self):
+            return bool(self.value)
 
-    def __lt__(self, other):
-        if isinstance(other, gdb.Parameter):
-            return self.optname < other.optname
-        else:
-            return self.value < other
+        # Compare operators
+        # Ref: http://portingguide.readthedocs.io/en/latest/comparisons.html
+        # If other is Parameter, comparing by optname. Used in `sorted` in `config` command.
+        # Otherwise, compare `self.value` with `other`
+        def __eq__(self, other):
+            if isinstance(other, gdb.Parameter):
+                return self.optname == other.optname
+            else:
+                return self.value == other
 
-    # Operators
-    def __add__(self, other):
-        return self.value + other
+        def __lt__(self, other):
+            if isinstance(other, gdb.Parameter):
+                return self.optname < other.optname
+            else:
+                return self.value < other
 
-    def __radd__(self, other):
-        return other + self.value
+        # Operators
+        def __add__(self, other):
+            return self.value + other
 
-    def __sub__(self, other):
-        return self.value - other
+        def __radd__(self, other):
+            return other + self.value
 
-    def __rsub__(self, other):
-        return other - self.value
+        def __sub__(self, other):
+            return self.value - other
 
-    def __mul__(self, other):
-        return self.value * other
+        def __rsub__(self, other):
+            return other - self.value
 
-    def __rmul__(self, other):
-        return other * self.value
+        def __mul__(self, other):
+            return self.value * other
 
-    def __div__(self, other):
-        return self.value / other
+        def __rmul__(self, other):
+            return other * self.value
 
-    def __floordiv__(self, other):
-        return self.value // other
+        def __div__(self, other):
+            return self.value / other
 
-    def __pow__(self, other):
-        return self.value ** other
+        def __floordiv__(self, other):
+            return self.value // other
 
-    def __mod__(self, other):
-        return self.value % other
+        def __pow__(self, other):
+            return self.value ** other
 
-    def __len__(self):
-        return len(self.value)
+        def __mod__(self, other):
+            return self.value % other
 
-    # Python2 compatibility
-    __nonzero__ = __bool__
+        def __len__(self):
+            return len(self.value)
+
+        # Python2 compatibility
+        __nonzero__ = __bool__
 
 
 class ConfigModule(types.ModuleType):

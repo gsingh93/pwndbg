@@ -288,5 +288,7 @@ def selected_frame_source_absolute_filename():
     return symtab.fullname()
 
 
-if '/usr/lib/debug' not in get_directory():
-    set_directory(get_directory() + ':/usr/lib/debug')
+@pwndbg.decorators.init
+def init():
+    if '/usr/lib/debug' not in get_directory():
+        set_directory(get_directory() + ':/usr/lib/debug')

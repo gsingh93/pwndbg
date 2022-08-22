@@ -260,11 +260,13 @@ def gdb77_get_register(name):
 def gdb79_get_register(name):
     return gdb.selected_frame().read_register(name)
 
-try:
-    gdb.Frame.read_register
-    get_register = gdb79_get_register
-except AttributeError:
-    get_register = gdb77_get_register
+@pwndbg.decorators.init
+def init():
+    try:
+        gdb.Frame.read_register
+        get_register = gdb79_get_register
+    except AttributeError:
+        get_register = gdb77_get_register
 
 
 # We need to manually make some ptrace calls to get fs/gs bases on Intel

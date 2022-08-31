@@ -1,7 +1,7 @@
 import gdb
 
-import pwndbg.memory
-import pwndbg.regs
+import pwndbg.gdb.memory
+import pwndbg.gdb.regs
 import tests
 from pwndbg.commands.xor import memfrob
 from pwndbg.commands.xor import xor
@@ -15,10 +15,10 @@ def test_command_xor_with_gdb_execute(start_binary):
     """
     start_binary(REFERENCE_BINARY)
 
-    before = pwndbg.regs.rsp
-    pwndbg.memory.write(before, b"aaaaaaaa")
+    before = pwndbg.gdb.regs.rsp
+    pwndbg.gdb.memory.write(before, b"aaaaaaaa")
     gdb.execute("xor $rsp ' ' 4")
-    after = pwndbg.memory.read(before, 8)
+    after = pwndbg.gdb.memory.read(before, 8)
     assert after == b"AAAAaaaa"
 
 
@@ -28,11 +28,11 @@ def test_command_xor_with_int(start_binary):
     """
     start_binary(REFERENCE_BINARY)
 
-    before = pwndbg.regs.rsp
+    before = pwndbg.gdb.regs.rsp
     assert isinstance(before, int)
-    pwndbg.memory.write(before, b"aaaaaaaa")
+    pwndbg.gdb.memory.write(before, b"aaaaaaaa")
     gdb.execute(f"xor {before} ' ' 4")
-    after = pwndbg.memory.read(before, 8)
+    after = pwndbg.gdb.memory.read(before, 8)
     assert after == b"AAAAaaaa"
 
 
@@ -42,20 +42,20 @@ def test_command_xor_with_hex(start_binary):
     """
     start_binary(REFERENCE_BINARY)
 
-    before = pwndbg.regs.rsp
+    before = pwndbg.gdb.regs.rsp
     before_hex = hex(before)
     assert isinstance(before_hex, str)
-    pwndbg.memory.write(before, b"aaaaaaaa")
+    pwndbg.gdb.memory.write(before, b"aaaaaaaa")
     gdb.execute(f"xor {before_hex} ' ' 4")
-    after = pwndbg.memory.read(before, 8)
+    after = pwndbg.gdb.memory.read(before, 8)
     assert after == b"AAAAaaaa"
 
 
 def test_command_memfrob(start_binary):
     start_binary(REFERENCE_BINARY)
 
-    before = pwndbg.regs.rsp
-    pwndbg.memory.write(before, b"aaaaaaaa")
+    before = pwndbg.gdb.regs.rsp
+    pwndbg.gdb.memory.write(before, b"aaaaaaaa")
     memfrob(before, 4)
-    after = pwndbg.memory.read(before, 8)
+    after = pwndbg.gdb.memory.read(before, 8)
     assert after == b"KKKKaaaa"

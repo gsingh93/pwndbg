@@ -161,7 +161,7 @@ def test_try_free_invalid_fastbin_entry(start_binary):
 def test_try_free_double_free_or_corruption_top(start_binary):
     setup_heap(start_binary, 9)
 
-    ptr_size = pwndbg.arch.ptrsize
+    ptr_size = pwndbg.gdb.arch.ptrsize
     top_chunk = int(pwndbg.heap.current.get_arena()["top"]) + 2 * ptr_size
 
     result = gdb.execute("try_free {}".format(hex(top_chunk)), to_string=True)
@@ -227,9 +227,9 @@ def test_vis_heap_chunk_command(start_binary):
 
     # TODO/FIXME: Shall we have a standard method to do this kind of filtering?
     # Note that we have `pages_filter` in pwndbg/pwndbg/commands/vmmap.py heh
-    heap_page = next(page for page in pwndbg.vmmap.get() if page.objfile == "[heap]")
+    heap_page = next(page for page in pwndbg.gdb.vmmap.get() if page.objfile == "[heap]")
 
-    first_chunk_size = pwndbg.memory.u64(heap_page.start + pwndbg.arch.ptrsize)
+    first_chunk_size = pwndbg.gdb.memory.u64(heap_page.start + pwndbg.gdb.arch.ptrsize)
 
     # Just a sanity check...
     assert (heap_page.start & 0xFFF) == 0
@@ -263,7 +263,7 @@ def test_vis_heap_chunk_command(start_binary):
         hexdump = hexdump_16B(addr)
 
         nonlocal dq2
-        dq1, dq2 = map(pwndbg.memory.u64, (addr, addr + 8))
+        dq1, dq2 = map(pwndbg.gdb.memory.u64, (addr, addr + 8))
 
         formatted = "%#x\t%#018x\t%#018x\t%s" % (addr, dq1, dq2, hexdump)
         formatted += suffix

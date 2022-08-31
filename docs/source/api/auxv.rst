@@ -1,5 +1,5 @@
-:mod:`pwndbg.auxv` --- pwndbg.auxv
+:mod:`pwndbg.gdb.auxv` --- pwndbg.gdb.auxv
 =============================================
 
-.. automodule:: pwndbg.auxv
+.. automodule:: pwndbg.gdb.auxv
     :members:

@@ -1,6 +1,10 @@
+import string
+
 import pwndbg.color.theme as theme
 import pwndbg.config as config
 from pwndbg.color import generateColorFunction
+
+printable_chars = set(string.printable) - set(string.whitespace)
 
 config_normal = theme.ColoredParameter(
     "hexdump-normal-color", "none", "color for hexdump command (normal bytes)"
@@ -61,3 +65,45 @@ def separator(x):
 
 def highlight_group_lsb(x):
     return generateColorFunction(config.hexdump_highlight_group_lsb)(x)
+
+
+def colorize_ascii(c):
+    c = chr(c)
+
+    # TODO: Can we simplify this if statement?
+    if not config.hexdump_colorize_ascii:
+        if c in printable_chars:
+            return c
+        else:
+            return "."
+
+    if c in printable_chars:
+        return printable(c)
+    elif c == "\x00":
+        return zero(".")
+    elif c in ["\xff", "\x7f", "\x80"]:
+        return special(".")
+
+    # TODO: Should we return normal(".") or "."?
+    return normal(".")
+
+    # TODO:
+    # printable[-1] = " "
+
+
+def colorize_hex(c):
+    x = "{:02x}".format(c)
+    c = chr(c)
+
+    # TODO: This logic can be shared with colorize_ascii
+    if c in printable_chars:
+        return printable(x)
+    elif c == "\x00":
+        return zero(x)
+    elif c in ["\xff", "\x7f", "\x80"]:
+        return special(x)
+
+    return normal(x)
+
+    # TODO:
+    # color_scheme[-1] = "  "

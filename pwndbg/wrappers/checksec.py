@@ -1,7 +1,7 @@
 from subprocess import CalledProcessError
 
 import pwndbg.commands
-import pwndbg.memoize
+import pwndbg.lib.memoize
 import pwndbg.wrappers
 
 cmd_name = "checksec"
@@ -9,9 +9,9 @@ cmd_pwntools = ["pwn", "checksec"]
 
 
 @pwndbg.wrappers.OnlyWithCommand(cmd_name, cmd_pwntools)
-@pwndbg.memoize.reset_on_objfile
+@pwndbg.lib.memoize.reset_on_objfile
 def get_raw_out():
-    local_path = pwndbg.file.get_file(pwndbg.proc.exe)
+    local_path = pwndbg.file.get_file(pwndbg.gdb.proc.exe)
     try:
         return pwndbg.wrappers.call_cmd(get_raw_out.cmd + ["--file=" + local_path])
     except CalledProcessError:

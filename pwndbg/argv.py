@@ -1,10 +1,11 @@
 import gdb
 
-import pwndbg.abi
-import pwndbg.arch
-import pwndbg.events
-import pwndbg.memory
-import pwndbg.regs
+import pwndbg.gdb.abi
+import pwndbg.gdb.arch
+import pwndbg.gdb.events
+import pwndbg.gdb.hooks
+import pwndbg.gdb.memory
+import pwndbg.gdb.regs
 
 #: Total number of arguments
 argc = None
@@ -19,22 +20,22 @@ envp = None
 envc = None
 
 
-@pwndbg.events.start
-@pwndbg.abi.LinuxOnly()
+@pwndbg.gdb.events.start
+@pwndbg.gdb.abi.LinuxOnly()
 def update():
     global argc
     global argv
     global envp
     global envc
 
-    pwndbg.arch.update()  # :-(
+    pwndbg.gdb.hooks.update_arch()  # :-(
 
-    sp = pwndbg.regs.sp
-    ptrsize = pwndbg.arch.ptrsize
+    sp = pwndbg.gdb.regs.sp
+    ptrsize = pwndbg.gdb.arch.ptrsize
     ptrbits = 8 * ptrsize
 
     try:
-        argc = pwndbg.memory.u(sp, ptrbits)
+        argc = pwndbg.gdb.memory.u(sp, ptrbits)
     except Exception:
         return
 
@@ -42,7 +43,7 @@ def update():
 
     argv = sp
 
-    while pwndbg.memory.u(sp, ptrbits):
+    while pwndbg.gdb.memory.u(sp, ptrbits):
         sp += ptrsize
 
     sp += ptrsize
@@ -51,7 +52,7 @@ def update():
 
     envc = 0
     try:
-        while pwndbg.memory.u(sp, ptrbits):
+        while pwndbg.gdb.memory.u(sp, ptrbits):
             sp += ptrsize
             envc += 1
     except gdb.MemoryError:

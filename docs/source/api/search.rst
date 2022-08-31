@@ -1,5 +1,5 @@
-:mod:`pwndbg.search` --- pwndbg.search
+:mod:`pwndbg.gdb.search` --- pwndbg.gdb.search
 =============================================
 
-.. automodule:: pwndbg.search
+.. automodule:: pwndbg.gdb.search
     :members:

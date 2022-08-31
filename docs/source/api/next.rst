@@ -1,5 +1,5 @@
-:mod:`pwndbg.next` --- pwndbg.next
+:mod:`pwndbg.gdb.next` --- pwndbg.gdb.next
 =============================================
 
-.. automodule:: pwndbg.next
+.. automodule:: pwndbg.gdb.next
     :members:

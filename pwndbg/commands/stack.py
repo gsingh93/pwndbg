@@ -1,17 +1,17 @@
 import gdb
 
-import pwndbg.arch
 import pwndbg.chain
 import pwndbg.commands
-import pwndbg.regs
-import pwndbg.vmmap
+import pwndbg.gdb.arch
+import pwndbg.gdb.regs
+import pwndbg.gdb.vmmap
 
 
 @pwndbg.commands.ArgparsedCommand("Print out the stack addresses that contain return addresses.")
 @pwndbg.commands.OnlyWhenRunning
 def retaddr():
-    sp = pwndbg.regs.sp
-    stack = pwndbg.vmmap.find(sp)
+    sp = pwndbg.gdb.regs.sp
+    stack = pwndbg.gdb.vmmap.find(sp)
 
     # Enumerate all return addresses
     frame = gdb.newest_frame()
@@ -24,11 +24,11 @@ def retaddr():
     start = stack.vaddr
     stop = start + stack.memsz
     while addresses and start < sp < stop:
-        value = pwndbg.memory.u(sp)
+        value = pwndbg.gdb.memory.u(sp)
 
         if value in addresses:
             index = addresses.index(value)
             del addresses[:index]
             print(pwndbg.chain.format(sp))
 
-        sp += pwndbg.arch.ptrsize
+        sp += pwndbg.gdb.arch.ptrsize

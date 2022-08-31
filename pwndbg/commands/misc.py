@@ -2,11 +2,11 @@ import argparse
 import errno as _errno
 
 import pwndbg as _pwndbg
-import pwndbg.arch as _arch
-import pwndbg.auxv
 import pwndbg.commands
-import pwndbg.regs
-import pwndbg.symbol
+import pwndbg.gdb.arch as _arch
+import pwndbg.gdb.auxv
+import pwndbg.gdb.regs
+import pwndbg.gdb.symbol
 
 _errno.errorcode[0] = "OK"
 
@@ -29,8 +29,8 @@ parser.add_argument(
 def errno(err):
     if err is None:
         # Dont ask.
-        errno_location = pwndbg.symbol.get("__errno_location")
-        err = pwndbg.memory.int(errno_location)
+        errno_location = pwndbg.gdb.symbol.get("__errno_location")
+        err = pwndbg.gdb.memory.int(errno_location)
         # err = int(gdb.parse_and_eval('*((int *(*) (void)) __errno_location) ()'))
 
     err = abs(int(err))

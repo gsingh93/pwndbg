@@ -2,10 +2,10 @@ import argparse
 
 import gdb
 
-import pwndbg.arch
 import pwndbg.color
 import pwndbg.commands
-import pwndbg.memory
+import pwndbg.gdb.arch
+import pwndbg.gdb.memory
 
 ts = pwndbg.commands.telescope.telescope
 
@@ -20,7 +20,7 @@ class AddrRange:
 
 
 def get_addrrange_any_named():
-    return [AddrRange(page.start, page.end) for page in pwndbg.vmmap.get()]
+    return [AddrRange(page.start, page.end) for page in pwndbg.gdb.vmmap.get()]
 
 
 def guess_numbers_base(num: str):
@@ -56,14 +56,14 @@ def address_range(section):
     global parser
 
     if section == "*" or section == "any":
-        return (0, pwndbg.arch.ptrmask)
+        return (0, pwndbg.gdb.arch.ptrmask)
 
     # User can use syntax: "begin:end" to specify explicit address range instead of named page.
     # TODO: handle page names that contains ':'.
     if ":" in section:
         return [address_range_explicit(section)]
 
-    pages = list(filter(lambda page: section in page.objfile, pwndbg.vmmap.get()))
+    pages = list(filter(lambda page: section in page.objfile, pwndbg.gdb.vmmap.get()))
 
     if pages:
         return [AddrRange(page.start, page.end) for page in pages]
@@ -82,7 +82,7 @@ parser.add_argument("mapping_names", type=address_range, nargs="+", help="Mappin
 
 def maybe_points_to_ranges(ptr: int, rs: [AddrRange]):
     try:
-        pointee = pwndbg.memory.pvoid(ptr)
+        pointee = pwndbg.gdb.memory.pvoid(ptr)
     except Exception:
         return None
 

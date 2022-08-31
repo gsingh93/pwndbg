@@ -4,8 +4,8 @@ import gdb
 
 import pwndbg.color.context as C
 import pwndbg.color.syntax_highlight as H
+import pwndbg.gdb.regs
 import pwndbg.radare2
-import pwndbg.regs
 
 
 def decompile(func=None):
@@ -28,7 +28,7 @@ def decompile(func=None):
         raise Exception("radare2 plugin r2ghidra must be installed and available from r2")
 
     if not func:
-        func = hex(pwndbg.regs[pwndbg.regs.current.pc]) if pwndbg.proc.alive else "main"
+        func = hex(pwndbg.gdb.regs[pwndbg.gdb.regs.current.pc]) if pwndbg.gdb.proc.alive else "main"
 
     src = r2.cmdj("pdgj @" + func)
     if not src:
@@ -38,8 +38,8 @@ def decompile(func=None):
     source = src.get("code", "")
 
     # If not running there is no current pc to mark
-    if pwndbg.proc.alive:
-        pc = pwndbg.regs[pwndbg.regs.current.pc]
+    if pwndbg.gdb.proc.alive:
+        pc = pwndbg.gdb.regs[pwndbg.gdb.regs.current.pc]
 
         closest = 0
         for off in (a.get("offset", 0) for a in src.get("annotations", [])):
@@ -62,7 +62,7 @@ def decompile(func=None):
 
     if pwndbg.config.syntax_highlight:
         # highlighting depends on the file extension to guess the language, so try to get one...
-        src_filename = pwndbg.symbol.selected_frame_source_absolute_filename()
+        src_filename = pwndbg.gdb.symbol.selected_frame_source_absolute_filename()
         if not src_filename:
             filename = gdb.current_progspace().filename
             src_filename = filename + ".c" if os.path.basename(filename).find(".") < 0 else filename

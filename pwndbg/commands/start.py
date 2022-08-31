@@ -3,50 +3,32 @@ Launches the target process after setting a breakpoint at a convenient
 entry point.
 """
 import argparse
-from argparse import RawTextHelpFormatter
 from shlex import quote
 
 import gdb
 
 import pwndbg.commands
-import pwndbg.elf
-import pwndbg.events
-import pwndbg.symbol
+import pwndbg.gdb.elf
+import pwndbg.gdb.events
+import pwndbg.gdb.symbol
 
 break_on_first_instruction = False
 
 
-@pwndbg.events.start
+@pwndbg.gdb.events.start
 def on_start():
     global break_on_first_instruction
     if break_on_first_instruction:
-        spec = "*%#x" % (int(pwndbg.elf.entry()))
+        spec = "*%#x" % (int(pwndbg.gdb.elf.entry()))
         gdb.Breakpoint(spec, temporary=True)
         break_on_first_instruction = False
 
 
-# Starting from 3rd paragraph, the description is
-# taken from the GDB's `starti` command description
 parser = argparse.ArgumentParser(
     description="""
-Start the debugged program stopping at the first convenient location
-from this list: main, _main, start, _start, init or _init.
-You may specify arguments to give it.
-
-Args may include "*", or "[...]"; they are expanded using the
-shell that will start the program (specified by the "$SHELL" environment
-variable).  Input and output redirection with ">", "<", or ">>"
-are also allowed.
-
-With no arguments, uses arguments last specified (with "run" or
-"set args").  To cancel previous arguments and run with no arguments,
-use "set args" without arguments.
-
-To start the inferior without using a shell, use "set startup-with-shell off".
-""",
-    formatter_class=RawTextHelpFormatter,
+    Set a breakpoint at a convenient location in the binary,
+    generally 'main', 'init', or the entry point."""
 )
-
 parser.add_argument(
     "args", nargs="*", type=str, default=None, help="The arguments to run the binary with."
 )
@@ -56,12 +38,16 @@ parser.add_argument(
 def start(args=None):
     if args is None:
         args = []
+    """
+    Set a breakpoint at a convenient location in the binary,
+    generally 'main', 'init', or the entry point.
+    """
     run = "run " + " ".join(args)
 
     symbols = ["main", "_main", "start", "_start", "init", "_init"]
 
     for symbol in symbols:
-        address = pwndbg.symbol.address(symbol, allow_unmapped=True)
+        address = pwndbg.gdb.symbol.address(symbol, allow_unmapped=True)
 
         if not address:
             continue
@@ -74,29 +60,11 @@ def start(args=None):
     entry(args)
 
 
-# Starting from 3rd paragraph, the description is
-# taken from the GDB's `starti` command description
 parser = argparse.ArgumentParser(
     description="""
-Start the debugged program stopping at its entrypoint address.
-You may specify arguments to give it.
-
-Note that the entrypoint may not be the first instruction executed
-by the program. If you want to stop on the first executed instruction,
-use the GDB's `starti` command (added in GDB 8.1).
-
-Args may include "*", or "[...]"; they are expanded using the
-shell that will start the program (specified by the "$SHELL" environment
-variable).  Input and output redirection with ">", "<", or ">>"
-are also allowed.
-
-With no arguments, uses arguments last specified (with "run" or
-"set args").  To cancel previous arguments and run with no arguments,
-use "set args" without arguments.
-
-To start the inferior without using a shell, use "set startup-with-shell off".
-""",
-    formatter_class=RawTextHelpFormatter,
+    Set a breakpoint at the first instruction executed in
+    the target binary.
+    """
 )
 parser.add_argument(
     "args", nargs="*", type=str, default=None, help="The arguments to run the binary with."
@@ -108,6 +76,10 @@ parser.add_argument(
 def entry(args=None):
     if args is None:
         arg = []
+    """
+    Set a breakpoint at the first instruction executed in
+    the target binary.
+    """
     global break_on_first_instruction
     break_on_first_instruction = True
     run = "run " + " ".join(map(quote, args))

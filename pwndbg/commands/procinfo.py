@@ -2,12 +2,14 @@ import string
 
 import gdb
 
-import pwndbg.auxv
 import pwndbg.commands
 import pwndbg.file
-import pwndbg.memoize
+import pwndbg.gdb.android
+import pwndbg.gdb.auxv
+import pwndbg.gdb.proc
+import pwndbg.lib.android
+import pwndbg.lib.memoize
 import pwndbg.net
-import pwndbg.proc
 
 try:
     import psutil
@@ -71,9 +73,9 @@ capabilities = {
 class Process:
     def __init__(self, pid=None, tid=None):
         if pid is None:
-            pid = pwndbg.proc.pid
+            pid = pwndbg.gdb.proc.pid
         if tid is None:
-            tid = pwndbg.proc.tid
+            tid = pwndbg.gdb.proc.tid
         if not tid:
             tid = pid
         self.pid = pid
@@ -83,14 +85,14 @@ class Process:
         self.status
 
     @property
-    @pwndbg.memoize.reset_on_stop
+    @pwndbg.lib.memoize.reset_on_stop
     def selinux(self):
         path = "/proc/%i/task/%i/attr/current" % (self.pid, self.tid)
         raw = pwndbg.file.get(path)
         return raw.decode().rstrip("\x00").strip()
 
     @property
-    @pwndbg.memoize.reset_on_stop
+    @pwndbg.lib.memoize.reset_on_stop
     def status(self):
         raw = pwndbg.file.get("/proc/%i/task/%i/status" % (self.pid, self.tid))
 
@@ -146,12 +148,12 @@ class Process:
         return status
 
     @property
-    @pwndbg.memoize.reset_on_stop
+    @pwndbg.lib.memoize.reset_on_stop
     def open_files(self):
         fds = {}
 
         for i in range(self.fdsize):
-            link = pwndbg.file.readlink("/proc/%i/fd/%i" % (pwndbg.proc.pid, i))
+            link = pwndbg.file.readlink("/proc/%i/fd/%i" % (pwndbg.gdb.proc.pid, i))
 
             if link:
                 fds[i] = link
@@ -159,7 +161,7 @@ class Process:
         return fds
 
     @property
-    @pwndbg.memoize.reset_on_stop
+    @pwndbg.lib.memoize.reset_on_stop
     def connections(self):
         # Connections look something like this:
         # socket:[102422]
@@ -188,7 +190,7 @@ class Process:
 @pwndbg.commands.ArgparsedCommand("Gets the pid.")
 @pwndbg.commands.OnlyWhenRunning
 def pid():
-    print(pwndbg.proc.pid)
+    print(pwndbg.gdb.proc.pid)
 
 
 @pwndbg.commands.ArgparsedCommand("Display information about the running process.")
@@ -201,7 +203,7 @@ def procinfo():
         print("psutil required but not installed")
         return
 
-    exe = str(pwndbg.auxv.get()["AT_EXECFN"])
+    exe = str(pwndbg.gdb.auxv.get()["AT_EXECFN"])
     print("%-10s %r" % ("exe", exe))
 
     proc = Process()
@@ -223,14 +225,14 @@ def procinfo():
 
     print("%-10s %s" % ("ppid", proc.ppid))
 
-    if not pwndbg.android.is_android():
+    if not pwndbg.gdb.android.is_android():
         print("%-10s %s" % ("uid", proc.uid))
         print("%-10s %s" % ("gid", proc.gid))
         print("%-10s %s" % ("groups", proc.groups))
     else:
-        print("%-10s %s" % ("uid", list(map(pwndbg.android.aid_name, proc.uid))))
-        print("%-10s %s" % ("gid", list(map(pwndbg.android.aid_name, proc.gid))))
-        print("%-10s %s" % ("groups", list(map(pwndbg.android.aid_name, proc.groups))))
+        print("%-10s %s" % ("uid", list(map(pwndbg.lib.android.aid_name, proc.uid))))
+        print("%-10s %s" % ("gid", list(map(pwndbg.lib.android.aid_name, proc.gid))))
+        print("%-10s %s" % ("groups", list(map(pwndbg.lib.android.aid_name, proc.groups))))
 
     for fd, path in files.items():
         if not set(path) < set(string.printable):

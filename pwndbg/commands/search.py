@@ -4,13 +4,13 @@ import codecs
 import os
 import struct
 
-import pwndbg.arch
 import pwndbg.color.memory as M
 import pwndbg.commands
 import pwndbg.config
 import pwndbg.enhance
-import pwndbg.search
-import pwndbg.vmmap
+import pwndbg.gdb.arch
+import pwndbg.gdb.search
+import pwndbg.gdb.vmmap
 from pwndbg.color import message
 
 saved = set()
@@ -25,7 +25,7 @@ def print_search_hit(address):
     if not address:
         return
 
-    vmmap = pwndbg.vmmap.find(address)
+    vmmap = pwndbg.gdb.vmmap.find(address)
     if vmmap:
         region = os.path.basename(vmmap.objfile)
     else:
@@ -142,7 +142,7 @@ def search(type, hex, string, executable, writable, value, mapping_name, save, n
 
     # Adjust pointer sizes to the local architecture
     if type == "pointer":
-        type = {4: "dword", 8: "qword"}[pwndbg.arch.ptrsize]
+        type = {4: "dword", 8: "qword"}[pwndbg.gdb.arch.ptrsize]
 
     if save is None:
         save = bool(pwndbg.config.auto_save_search)
@@ -157,8 +157,8 @@ def search(type, hex, string, executable, writable, value, mapping_name, save, n
     # Convert to an integer if needed, and pack to bytes
     if type not in ("string", "bytes"):
         value = pwndbg.commands.fix_int(value)
-        value &= pwndbg.arch.ptrmask
-        fmt = {"little": "<", "big": ">"}[pwndbg.arch.endian] + {
+        value &= pwndbg.gdb.arch.ptrmask
+        fmt = {"little": "<", "big": ">"}[pwndbg.gdb.arch.endian] + {
             "byte": "B",
             "short": "H",
             "word": "H",
@@ -178,7 +178,7 @@ def search(type, hex, string, executable, writable, value, mapping_name, save, n
         value += b"\x00"
 
     # Find the mappings that we're looking for
-    mappings = pwndbg.vmmap.get()
+    mappings = pwndbg.gdb.vmmap.get()
 
     if mapping_name:
         mappings = [m for m in mappings if mapping_name in m.objfile]
@@ -196,7 +196,7 @@ def search(type, hex, string, executable, writable, value, mapping_name, save, n
         i = 0
         for addr in saved:
             try:
-                val = pwndbg.memory.read(addr, val_len)
+                val = pwndbg.gdb.memory.read(addr, val_len)
             except Exception:
                 continue
             if val == value:
@@ -215,7 +215,7 @@ def search(type, hex, string, executable, writable, value, mapping_name, save, n
 
     # Perform the search
     i = 0
-    for address in pwndbg.search.search(
+    for address in pwndbg.gdb.search.search(
         value, mappings=mappings, executable=executable, writable=writable
     ):
 

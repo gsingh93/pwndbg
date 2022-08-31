@@ -2,14 +2,14 @@ import argparse
 
 import gdb
 
-import pwndbg.arch
 import pwndbg.color.memory as M
 import pwndbg.commands
 import pwndbg.config
-import pwndbg.memory
-import pwndbg.regs
-import pwndbg.stack
-import pwndbg.vmmap
+import pwndbg.gdb.arch
+import pwndbg.gdb.memory
+import pwndbg.gdb.regs
+import pwndbg.gdb.stack
+import pwndbg.gdb.vmmap
 import pwndbg.wrappers
 
 parser = argparse.ArgumentParser(
@@ -35,9 +35,9 @@ def xinfo_stack(page, addr):
     # If it's a stack address, print offsets to top and bottom of stack, as
     # well as offsets to current stack and base pointer (if used by debuggee)
 
-    sp = pwndbg.regs.sp
-    frame = pwndbg.regs[pwndbg.regs.frame]
-    frame_mapping = pwndbg.vmmap.find(frame)
+    sp = pwndbg.gdb.regs.sp
+    frame = pwndbg.gdb.regs[pwndbg.gdb.regs.frame]
+    frame_mapping = pwndbg.gdb.vmmap.find(frame)
 
     print_line("Stack Top", addr, page.vaddr, addr - page.vaddr, "+")
     print_line("Stack End", addr, page.end, page.end - addr, "-")
@@ -50,8 +50,8 @@ def xinfo_stack(page, addr):
 
     if canary_value is not None:
         all_canaries = list(
-            pwndbg.search.search(
-                pwndbg.arch.pack(canary_value), mappings=pwndbg.stack.stacks.values()
+            pwndbg.gdb.search.search(
+                pwndbg.gdb.arch.pack(canary_value), mappings=pwndbg.gdb.stack.stacks.values()
             )
         )
         follow_canaries = sorted(filter(lambda a: a > addr, all_canaries))
@@ -65,7 +65,7 @@ def xinfo_mmap_file(page, addr):
     # to beginning of file in memory and on disk
 
     file_name = page.objfile
-    objpages = filter(lambda p: p.objfile == file_name, pwndbg.vmmap.get())
+    objpages = filter(lambda p: p.objfile == file_name, pwndbg.gdb.vmmap.get())
     first = sorted(objpages, key=lambda p: p.vaddr)[0]
 
     # print offset from ELF base load address
@@ -75,7 +75,7 @@ def xinfo_mmap_file(page, addr):
     # find possible LOAD segments that designate memory and file backings
     containing_loads = [
         seg
-        for seg in pwndbg.elf.get_containing_segments(file_name, first.vaddr, addr)
+        for seg in pwndbg.gdb.elf.get_containing_segments(file_name, first.vaddr, addr)
         if seg["p_type"] == "PT_LOAD"
     ]
 
@@ -93,7 +93,7 @@ def xinfo_mmap_file(page, addr):
     else:
         print("{} {} = [not file backed]".format("File (Disk)".rjust(20), M.get(addr)))
 
-    containing_sections = pwndbg.elf.get_containing_sections(file_name, first.vaddr, addr)
+    containing_sections = pwndbg.gdb.elf.get_containing_sections(file_name, first.vaddr, addr)
     if len(containing_sections) > 0:
         print("\n Containing ELF sections:")
         for sec in containing_sections:
@@ -108,11 +108,13 @@ def xinfo_default(page, addr):
 @pwndbg.commands.ArgparsedCommand(parser)
 @pwndbg.commands.OnlyWhenRunning
 def xinfo(address=None):
-    address = address.cast(pwndbg.typeinfo.pvoid)  # Fixes issues with function ptrs (xinfo malloc)
+    address = address.cast(
+        pwndbg.gdb.typeinfo.pvoid
+    )  # Fixes issues with function ptrs (xinfo malloc)
     addr = int(address)
-    addr &= pwndbg.arch.ptrmask
+    addr &= pwndbg.gdb.arch.ptrmask
 
-    page = pwndbg.vmmap.find(addr)
+    page = pwndbg.gdb.vmmap.find(addr)
 
     if page is None:
         print("\n  Virtual address {:#x} is not mapped.".format(addr))

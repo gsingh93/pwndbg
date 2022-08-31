@@ -1,14 +1,14 @@
 import gdb
 
-import pwndbg.abi
 import pwndbg.color.chain as C
 import pwndbg.color.memory as M
 import pwndbg.color.theme as theme
 import pwndbg.enhance
-import pwndbg.memory
-import pwndbg.symbol
-import pwndbg.typeinfo
-import pwndbg.vmmap
+import pwndbg.gdb.abi
+import pwndbg.gdb.memory
+import pwndbg.gdb.symbol
+import pwndbg.gdb.typeinfo
+import pwndbg.gdb.vmmap
 
 LIMIT = pwndbg.config.Parameter(
     "dereference-limit", 5, "max number of pointers to dereference in a chain"
@@ -56,12 +56,12 @@ def get(
 
             # Avoid redundant dereferences in bare metal mode by checking
             # if address is in any of vmmap pages
-            if not pwndbg.abi.linux and not pwndbg.vmmap.find(address):
+            if not pwndbg.gdb.abi.linux and not pwndbg.gdb.vmmap.find(address):
                 break
 
-            next_address = int(pwndbg.memory.poi(pwndbg.typeinfo.ppvoid, address))
+            next_address = int(pwndbg.gdb.memory.poi(pwndbg.gdb.typeinfo.ppvoid, address))
             address = next_address ^ ((address >> 12) if safe_linking else 0)
-            address &= pwndbg.arch.ptrmask
+            address &= pwndbg.gdb.arch.ptrmask
             result.append(address)
         except gdb.MemoryError:
             break
@@ -108,7 +108,7 @@ def format(value, limit=LIMIT, code=True, offset=0, hard_stop=None, hard_end=0, 
     # Colorize the chain
     rest = []
     for link in chain:
-        symbol = pwndbg.symbol.get(link) or None
+        symbol = pwndbg.gdb.symbol.get(link) or None
         if symbol:
             symbol = "%#x (%s)" % (link, symbol)
         rest.append(M.get(link, symbol))

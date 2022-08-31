@@ -19,13 +19,13 @@ import pwndbg.commands.nearpc
 import pwndbg.commands.telescope
 import pwndbg.config
 import pwndbg.disasm
-import pwndbg.events
+import pwndbg.gdb.events
+import pwndbg.gdb.regs
+import pwndbg.gdb.symbol
+import pwndbg.gdb.vmmap
 import pwndbg.ghidra
 import pwndbg.ida
-import pwndbg.regs
-import pwndbg.symbol
 import pwndbg.ui
-import pwndbg.vmmap
 from pwndbg.color import message
 from pwndbg.color import theme
 
@@ -305,7 +305,7 @@ def context_ghidra(target=sys.stdout, with_banner=True, width=None):
         return []
 
     if config_context_ghidra == "if-no-source":
-        source_filename = pwndbg.symbol.selected_frame_source_absolute_filename()
+        source_filename = pwndbg.gdb.symbol.selected_frame_source_absolute_filename()
         if source_filename and os.path.exists(source_filename):
             return []
 
@@ -315,7 +315,7 @@ def context_ghidra(target=sys.stdout, with_banner=True, width=None):
         return banner + [message.error(e)]
 
 
-# @pwndbg.events.stop
+# @pwndbg.gdb.events.stop
 
 parser = argparse.ArgumentParser()
 parser.description = "Print out the current register, instruction, and stack context."
@@ -491,32 +491,32 @@ def get_regs(*regs):
 
     if not regs and pwndbg.config.show_retaddr_reg:
         regs = (
-            pwndbg.regs.gpr
-            + (pwndbg.regs.frame, pwndbg.regs.current.stack)
-            + pwndbg.regs.retaddr
-            + (pwndbg.regs.current.pc,)
+            pwndbg.gdb.regs.gpr
+            + (pwndbg.gdb.regs.frame, pwndbg.gdb.regs.current.stack)
+            + pwndbg.gdb.regs.retaddr
+            + (pwndbg.gdb.regs.current.pc,)
         )
     elif not regs:
-        regs = pwndbg.regs.gpr + (
-            pwndbg.regs.frame,
-            pwndbg.regs.current.stack,
-            pwndbg.regs.current.pc,
+        regs = pwndbg.gdb.regs.gpr + (
+            pwndbg.gdb.regs.frame,
+            pwndbg.gdb.regs.current.stack,
+            pwndbg.gdb.regs.current.pc,
         )
 
     if pwndbg.config.show_flags:
-        regs += tuple(pwndbg.regs.flags)
+        regs += tuple(pwndbg.gdb.regs.flags)
 
-    changed = pwndbg.regs.changed
+    changed = pwndbg.gdb.regs.changed
 
     for reg in regs:
         if reg is None:
             continue
 
-        if reg not in pwndbg.regs:
+        if reg not in pwndbg.gdb.regs:
             print(message.warn("Unknown register: %r" % reg))
             continue
 
-        value = pwndbg.regs[reg]
+        value = pwndbg.gdb.regs[reg]
 
         # Make the register stand out
         regname = C.register(reg.ljust(4).upper())
@@ -525,8 +525,8 @@ def get_regs(*regs):
         change_marker = "%s" % C.config_register_changed_marker
         m = " " * len(change_marker) if reg not in changed else C.register_changed(change_marker)
 
-        if reg in pwndbg.regs.flags:
-            desc = C.format_flags(value, pwndbg.regs.flags[reg], pwndbg.regs.last.get(reg, 0))
+        if reg in pwndbg.gdb.regs.flags:
+            desc = C.format_flags(value, pwndbg.gdb.regs.flags[reg], pwndbg.gdb.regs.last.get(reg, 0))
 
         else:
             desc = pwndbg.chain.format(value)
@@ -564,7 +564,7 @@ def context_disasm(target=sys.stdout, with_banner=True, width=None):
 
     # The `None` case happens when the cache was not filled yet (see e.g. #881)
     if cs is not None and cs.syntax != syntax:
-        pwndbg.memoize.reset()
+        pwndbg.lib.memoize.reset()
 
     banner = [pwndbg.ui.banner("disasm", target=target, width=width)]
     emulate = bool(pwndbg.config.emulate)
@@ -585,7 +585,7 @@ source_code_lines = pwndbg.config.Parameter(
 theme.Parameter("code-prefix", "►", "prefix marker for 'context code' command")
 
 
-@pwndbg.memoize.reset_on_start
+@pwndbg.lib.memoize.reset_on_start
 def get_highlight_source(filename):
     # Notice that the code is cached
     with open(filename, encoding="utf-8", errors="ignore") as f:
@@ -671,7 +671,7 @@ def context_code(target=sys.stdout, with_banner=True, width=None):
 
     n = int(int(int(source_code_lines) / 2))  # int twice to make it a real int instead of inthook
     # May be None when decompilation failed or user loaded wrong binary in IDA
-    code = pwndbg.ida.decompile_context(pwndbg.regs.pc, n)
+    code = pwndbg.ida.decompile_context(pwndbg.gdb.regs.pc, n)
 
     if code:
         bannerline = (
@@ -692,7 +692,7 @@ stack_lines = pwndbg.config.Parameter(
 def context_stack(target=sys.stdout, with_banner=True, width=None):
     result = [pwndbg.ui.banner("stack", target=target, width=width)] if with_banner else []
     telescope = pwndbg.commands.telescope.telescope(
-        pwndbg.regs.sp, to_string=True, count=stack_lines
+        pwndbg.gdb.regs.sp, to_string=True, count=stack_lines
     )
     if telescope:
         result.extend(telescope)
@@ -720,8 +720,7 @@ def context_backtrace(with_banner=True, target=sys.stdout, width=None):
     for i in range(backtrace_lines - 1):
         try:
             candidate = oldest_frame.older()
-        # We catch gdb.error in case of a `gdb.error: PC not saved` case
-        except (gdb.MemoryError, gdb.error):
+        except gdb.MemoryError:
             break
 
         if not candidate:
@@ -742,7 +741,7 @@ def context_backtrace(with_banner=True, target=sys.stdout, width=None):
         prefix = bt_prefix if frame == this_frame else " " * len(bt_prefix)
         prefix = " %s" % B.prefix(prefix)
         addrsz = B.address(pwndbg.ui.addrsz(frame.pc()))
-        symbol = B.symbol(pwndbg.symbol.get(frame.pc()))
+        symbol = B.symbol(pwndbg.gdb.symbol.get(frame.pc()))
         if symbol:
             addrsz = addrsz + " " + symbol
         line = map(str, (prefix, B.frame_label("%s%i" % (backtrace_frame_label, i)), addrsz))
@@ -791,7 +790,7 @@ def save_signal(signal):
             # we can't access $_siginfo, so lets just show current pc
             # see also issue 476
             if _is_rr_present():
-                msg += " (current pc: %#x)" % pwndbg.regs.pc
+                msg += " (current pc: %#x)" % pwndbg.gdb.regs.pc
             else:
                 try:
                     si_addr = gdb.parse_and_eval("$_siginfo._sifields._sigfault.si_addr")
@@ -826,7 +825,7 @@ context_sections = {
 }
 
 
-@pwndbg.memoize.forever
+@pwndbg.lib.memoize.forever
 def _is_rr_present():
     """
     Checks whether rr project is present (so someone launched e.g. `rr replay <some-recording>`)

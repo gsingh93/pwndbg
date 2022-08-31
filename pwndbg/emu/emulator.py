@@ -9,11 +9,11 @@ import capstone as C
 import gdb
 import unicorn as U
 
-import pwndbg.arch
 import pwndbg.disasm
 import pwndbg.emu.emulator
-import pwndbg.memory
-import pwndbg.regs
+import pwndbg.gdb.arch
+import pwndbg.gdb.memory
+import pwndbg.gdb.regs
 
 
 def parse_consts(u_consts):
@@ -100,7 +100,7 @@ e.until_jump()
 
 class Emulator:
     def __init__(self):
-        self.arch = pwndbg.arch.current
+        self.arch = pwndbg.gdb.arch.current
 
         if self.arch not in arch_to_UC:
             raise NotImplementedError("Cannot emulate code for %s" % self.arch)
@@ -119,7 +119,7 @@ class Emulator:
         debug("# Instantiating Unicorn for %s", self.arch)
         debug("uc = U.Uc(%r, %r)", (arch_to_UC[self.arch], self.uc_mode))
         self.uc = U.Uc(arch_to_UC[self.arch], self.uc_mode)
-        self.regs = pwndbg.regs.current
+        self.regs = pwndbg.gdb.regs.current
 
         # Jump tracking state
         self._prev = None
@@ -142,7 +142,7 @@ class Emulator:
             if reg in blacklisted_regs:
                 debug("Skipping blacklisted register %r", reg)
                 continue
-            value = getattr(pwndbg.regs, reg)
+            value = getattr(pwndbg.gdb.regs, reg)
             if None in (enum, value):
                 if reg not in blacklisted_regs:
                     debug("# Could not set register %r", reg)
@@ -163,7 +163,7 @@ class Emulator:
         self.hook_add(U.UC_HOOK_INTR, self.hook_intr)
 
         # Map in the page that $pc is on
-        self.map_page(pwndbg.regs.pc)
+        self.map_page(pwndbg.gdb.regs.pc)
 
         # Instruction tracing
         if DEBUG:
@@ -179,33 +179,33 @@ class Emulator:
 
     def update_pc(self, pc=None):
         if pc is None:
-            pc = pwndbg.regs.pc
+            pc = pwndbg.gdb.regs.pc
         self.uc.reg_write(self.get_reg_enum(self.regs.pc), pc)
 
     def get_uc_mode(self):
         """
         Retrieve the mode used by Unicorn for the current architecture.
         """
-        arch = pwndbg.arch.current
+        arch = pwndbg.gdb.arch.current
         mode = 0
 
         if arch == "armcm":
             mode |= (
                 (U.UC_MODE_MCLASS | U.UC_MODE_THUMB)
-                if (pwndbg.regs.xpsr & (1 << 24))
+                if (pwndbg.gdb.regs.xpsr & (1 << 24))
                 else U.UC_MODE_MCLASS
             )
 
         elif arch in ("arm", "aarch64"):
-            mode |= U.UC_MODE_THUMB if (pwndbg.regs.cpsr & (1 << 5)) else U.UC_MODE_ARM
+            mode |= U.UC_MODE_THUMB if (pwndbg.gdb.regs.cpsr & (1 << 5)) else U.UC_MODE_ARM
 
         elif arch == "mips" and "isa32r6" in gdb.newest_frame().architecture().name():
             mode |= U.UC_MODE_MIPS32R6
 
         else:
-            mode |= {4: U.UC_MODE_32, 8: U.UC_MODE_64}[pwndbg.arch.ptrsize]
+            mode |= {4: U.UC_MODE_32, 8: U.UC_MODE_64}[pwndbg.gdb.arch.ptrsize]
 
-        if pwndbg.arch.endian == "little":
+        if pwndbg.gdb.arch.endian == "little":
             mode |= U.UC_MODE_LITTLE_ENDIAN
         else:
             mode |= U.UC_MODE_BIG_ENDIAN
@@ -213,13 +213,13 @@ class Emulator:
         return mode
 
     def map_page(self, page):
-        page = pwndbg.memory.page_align(page)
-        size = pwndbg.memory.PAGE_SIZE
+        page = pwndbg.lib.memory.page_align(page)
+        size = pwndbg.gdb.memory.PAGE_SIZE
 
         debug("# Mapping %#x-%#x", (page, page + size))
 
         try:
-            data = pwndbg.memory.read(page, size)
+            data = pwndbg.gdb.memory.read(page, size)
             data = bytes(data)
         except gdb.MemoryError:
             debug("Could not map page %#x during emulation! [exception]", page)
@@ -242,12 +242,12 @@ class Emulator:
         debug("# Invalid access at %#x", address)
 
         # Page-align the start address
-        start = pwndbg.memory.page_align(address)
-        size = pwndbg.memory.page_size_align(address + size - start)
+        start = pwndbg.lib.memory.page_align(address)
+        size = pwndbg.lib.memory.page_size_align(address + size - start)
         stop = start + size
 
         # Map each page with the permissions that we think it has.
-        for page in range(start, stop, pwndbg.memory.PAGE_SIZE):
+        for page in range(start, stop, pwndbg.gdb.memory.PAGE_SIZE):
             if not self.map_page(page):
                 return False
 

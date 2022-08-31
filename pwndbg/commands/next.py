@@ -7,14 +7,14 @@ import argparse
 import gdb
 
 import pwndbg.commands
-import pwndbg.next
+import pwndbg.gdb.next
 
 
 @pwndbg.commands.ArgparsedCommand("Breaks at the next jump instruction.", aliases=["nextjump"])
 @pwndbg.commands.OnlyWhenRunning
 def nextjmp():
     """Breaks at the next jump instruction"""
-    if pwndbg.next.break_next_branch():
+    if pwndbg.gdb.next.break_next_branch():
         pwndbg.commands.context.context()
 
 
@@ -32,7 +32,7 @@ parser.add_argument(
 @pwndbg.commands.OnlyWhenRunning
 def nextcall(symbol_regex=None):
     """Breaks at the next call instruction"""
-    if pwndbg.next.break_next_call(symbol_regex):
+    if pwndbg.gdb.next.break_next_call(symbol_regex):
         pwndbg.commands.context.context()
 
 
@@ -40,7 +40,7 @@ def nextcall(symbol_regex=None):
 @pwndbg.commands.OnlyWhenRunning
 def nextret():
     """Breaks at next return-like instruction"""
-    if pwndbg.next.break_next_ret():
+    if pwndbg.gdb.next.break_next_ret():
         pwndbg.commands.context.context()
 
 
@@ -49,14 +49,14 @@ def nextret():
 def stepret():
     """Breaks at next return-like instruction by 'stepping' to it"""
     while (
-        pwndbg.proc.alive and not pwndbg.next.break_next_ret() and pwndbg.next.break_next_branch()
+        pwndbg.gdb.proc.alive and not pwndbg.gdb.next.break_next_ret() and pwndbg.gdb.next.break_next_branch()
     ):
         # Here we are e.g. on a CALL instruction (temporarily breakpointed by `break_next_branch`)
         # We need to step so that we take this branch instead of ignoring it
         gdb.execute("si")
         continue
 
-    if pwndbg.proc.alive:
+    if pwndbg.gdb.proc.alive:
         pwndbg.commands.context.context()
 
 
@@ -66,7 +66,7 @@ def stepret():
 @pwndbg.commands.OnlyWhenRunning
 def nextproginstr():
     """Breaks at the next instruction that belongs to the running program"""
-    if pwndbg.next.break_on_program_code():
+    if pwndbg.gdb.next.break_on_program_code():
         pwndbg.commands.context.context()
 
 
@@ -80,7 +80,7 @@ parser.add_argument("addr", type=int, default=None, nargs="?", help="The address
 @pwndbg.commands.OnlyWhenRunning
 def stepover(addr=None):
     """Sets a breakpoint on the instruction after this one"""
-    pwndbg.next.break_on_next(addr)
+    pwndbg.gdb.next.break_on_next(addr)
 
 
 @pwndbg.commands.ArgparsedCommand(
@@ -92,13 +92,13 @@ def nextsyscall():
     Breaks at the next syscall not taking branches.
     """
     while (
-        pwndbg.proc.alive
-        and not pwndbg.next.break_next_interrupt()
-        and pwndbg.next.break_next_branch()
+        pwndbg.gdb.proc.alive
+        and not pwndbg.gdb.next.break_next_interrupt()
+        and pwndbg.gdb.next.break_next_branch()
     ):
         continue
 
-    if pwndbg.proc.alive:
+    if pwndbg.gdb.proc.alive:
         pwndbg.commands.context.context()
 
 
@@ -111,14 +111,14 @@ def stepsyscall():
     Breaks at the next syscall by taking branches.
     """
     while (
-        pwndbg.proc.alive
-        and not pwndbg.next.break_next_interrupt()
-        and pwndbg.next.break_next_branch()
+        pwndbg.gdb.proc.alive
+        and not pwndbg.gdb.next.break_next_interrupt()
+        and pwndbg.gdb.next.break_next_branch()
     ):
         # Here we are e.g. on a CALL instruction (temporarily breakpointed by `break_next_branch`)
         # We need to step so that we take this branch instead of ignoring it
         gdb.execute("si")
         continue
 
-    if pwndbg.proc.alive:
+    if pwndbg.gdb.proc.alive:
         pwndbg.commands.context.context()

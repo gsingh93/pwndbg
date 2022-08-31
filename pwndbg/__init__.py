@@ -1,9 +1,7 @@
+import sys
+
 import signal
 
-import gdb
-
-import pwndbg.android
-import pwndbg.arch
 import pwndbg.arguments
 import pwndbg.argv
 import pwndbg.color
@@ -62,27 +60,36 @@ import pwndbg.disasm.mips
 import pwndbg.disasm.ppc
 import pwndbg.disasm.sparc
 import pwndbg.disasm.x86
-import pwndbg.dt
-import pwndbg.elf
 import pwndbg.exception
+import pwndbg.gdb
+import pwndbg.gdb.abi
+import pwndbg.gdb.android
+import pwndbg.gdb.arch
+import pwndbg.gdb.ctypes
+import pwndbg.gdb.elf
+import pwndbg.gdb.events
+import pwndbg.gdb.glibc
+import pwndbg.gdb.hooks
+import pwndbg.gdb.memory
+import pwndbg.gdb.next
+import pwndbg.gdb.proc
+import pwndbg.gdb.prompt
+import pwndbg.gdb.qemu
+import pwndbg.gdb.regs
+import pwndbg.gdb.stack
+import pwndbg.gdb.strings
+import pwndbg.gdb.symbol
+import pwndbg.gdb.typeinfo
+import pwndbg.gdb.vmmap
 import pwndbg.gdbutils.functions
 import pwndbg.heap
-import pwndbg.memory
 import pwndbg.net
-import pwndbg.proc
-import pwndbg.prompt
-import pwndbg.regs
-import pwndbg.stack
-import pwndbg.tempfile
-import pwndbg.typeinfo
 import pwndbg.ui
-import pwndbg.version
-import pwndbg.vmmap
 import pwndbg.wrappers
 import pwndbg.wrappers.checksec
 import pwndbg.wrappers.readelf
+from pwndbg.lib.version import __version__
 
-__version__ = pwndbg.version.__version__
 version = __version__
 
 try:
@@ -126,7 +133,7 @@ __all__ = [
     "vmmap",
 ]
 
-pwndbg.prompt.set_prompt()
+pwndbg.gdb.prompt.set_prompt()
 
 pre_commands = """
 set confirm off
@@ -148,19 +155,22 @@ handle SIGSEGV stop   print nopass
     pwndbg.ui.get_window_size()[1]
 )
 
+# TODO, if we import this, it takes the place of pwndbg.gdb
+import gdb as gdb_
+
 for line in pre_commands.strip().splitlines():
-    gdb.execute(line)
+    gdb_.execute(line)
 
 # This may throw an exception, see pwndbg/pwndbg#27
 try:
-    gdb.execute("set disassembly-flavor intel")
-except gdb.error:
+    gdb_.execute("set disassembly-flavor intel")
+except gdb_.error:
     pass
 
 # handle resize event to align width and completion
 signal.signal(
     signal.SIGWINCH,
-    lambda signum, frame: gdb.execute("set width %i" % pwndbg.ui.get_window_size()[1]),
+    lambda signum, frame: gdb_.execute("set width %i" % pwndbg.ui.get_window_size()[1]),
 )
 
 # Workaround for gdb bug described in #321 ( https://github.com/pwndbg/pwndbg/issues/321 )
@@ -168,7 +178,7 @@ signal.signal(
 # As stated on GDB's bugzilla that makes remote target search slower.
 # After GDB gets the fix, we should disable this only for bugged GDB versions.
 if 1:
-    gdb.execute("set remote search-memory-packet off")
+    gdb_.execute("set remote search-memory-packet off")
 
 # Reading Comment file
 pwndbg.commands.comments.init()

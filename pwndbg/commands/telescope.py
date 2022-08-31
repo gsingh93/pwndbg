@@ -8,15 +8,15 @@ import argparse
 import collections
 import math
 
-import pwndbg.arch
 import pwndbg.chain
 import pwndbg.color.telescope as T
 import pwndbg.color.theme as theme
 import pwndbg.commands
 import pwndbg.config
-import pwndbg.memory
-import pwndbg.regs
-import pwndbg.typeinfo
+import pwndbg.gdb.arch
+import pwndbg.gdb.memory
+import pwndbg.gdb.regs
+import pwndbg.gdb.typeinfo
 
 telescope_lines = pwndbg.config.Parameter(
     "telescope-lines", 8, "number of lines to printed by the telescope command"
@@ -72,15 +72,15 @@ def telescope(address=None, count=telescope_lines, to_string=False, reverse=Fals
     Recursively dereferences pointers starting at the specified address
     ($sp by default)
     """
-    ptrsize = pwndbg.typeinfo.ptrsize
+    ptrsize = pwndbg.gdb.typeinfo.ptrsize
     if telescope.repeat:
         address = telescope.last_address + ptrsize
         telescope.offset += 1
     else:
         telescope.offset = 0
 
-    address = int(address if address else pwndbg.regs.sp) & pwndbg.arch.ptrmask
-    count = max(int(count), 1) & pwndbg.arch.ptrmask
+    address = int(address if address else pwndbg.gdb.regs.sp) & pwndbg.gdb.arch.ptrmask
+    count = max(int(count), 1) & pwndbg.gdb.arch.ptrmask
     delimiter = T.delimiter(offset_delimiter)
     separator = T.separator(offset_separator)
 
@@ -89,9 +89,9 @@ def telescope(address=None, count=telescope_lines, to_string=False, reverse=Fals
         address -= (count - 1) * ptrsize
 
     # Allow invocation of "telescope 20" to dump 20 bytes at the stack pointer
-    if address < pwndbg.memory.MMAP_MIN_ADDR and not pwndbg.memory.peek(address):
+    if address < pwndbg.gdb.memory.MMAP_MIN_ADDR and not pwndbg.gdb.memory.peek(address):
         count = address
-        address = pwndbg.regs.sp
+        address = pwndbg.gdb.regs.sp
 
     # Allow invocation of "telescope a b" to dump all bytes from A to B
     if int(address) <= int(count):
@@ -101,9 +101,9 @@ def telescope(address=None, count=telescope_lines, to_string=False, reverse=Fals
         count = max(math.ceil(count / ptrsize), 1)
 
     reg_values = collections.defaultdict(lambda: [])
-    for reg in pwndbg.regs.common:
-        reg_values[pwndbg.regs[reg]].append(reg)
-    # address    = pwndbg.memory.poi(pwndbg.typeinfo.ppvoid, address)
+    for reg in pwndbg.gdb.regs.common:
+        reg_values[pwndbg.gdb.regs[reg]].append(reg)
+    # address    = pwndbg.gdb.memory.poi(pwndbg.gdb.typeinfo.ppvoid, address)
 
     start = address
     stop = address + (count * ptrsize)
@@ -114,7 +114,7 @@ def telescope(address=None, count=telescope_lines, to_string=False, reverse=Fals
     for i in range(start, stop, step):
         values = list(reg_values[i])
 
-        for width in range(1, pwndbg.arch.ptrsize):
+        for width in range(1, pwndbg.gdb.arch.ptrsize):
             values.extend("%s-%i" % (r, width) for r in reg_values[i + width])
 
         regs[i] = " ".join(values)
@@ -155,7 +155,7 @@ def telescope(address=None, count=telescope_lines, to_string=False, reverse=Fals
         collapse_buffer.clear()
 
     for i, addr in enumerate(range(start, stop, step)):
-        if not pwndbg.memory.peek(addr):
+        if not pwndbg.gdb.memory.peek(addr):
             collapse_repeating_values()
             result.append("<Could not read memory at %#x>" % addr)
             break
@@ -178,7 +178,7 @@ def telescope(address=None, count=telescope_lines, to_string=False, reverse=Fals
 
         # Buffer repeating values.
         if skip_repeating_values:
-            value = pwndbg.memory.pvoid(addr)
+            value = pwndbg.gdb.memory.pvoid(addr)
             if last == value:
                 collapse_buffer.append(line)
                 continue
@@ -213,9 +213,9 @@ parser.add_argument(
 @pwndbg.commands.ArgparsedCommand(parser)
 @pwndbg.commands.OnlyWhenRunning
 def stack(count, offset):
-    ptrsize = pwndbg.typeinfo.ptrsize
+    ptrsize = pwndbg.gdb.typeinfo.ptrsize
     telescope.repeat = stack.repeat
-    telescope(address=pwndbg.regs.sp + offset * ptrsize, count=count)
+    telescope(address=pwndbg.gdb.regs.sp + offset * ptrsize, count=count)
 
 
 telescope.last_address = 0

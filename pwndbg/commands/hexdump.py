@@ -2,12 +2,27 @@ import argparse
 
 import gdb
 
-import pwndbg.arch
+import pwndbg.color.hexdump
+
+# TODO: Is it better to put the theme parameters here or in color/hexdump.py?
+import pwndbg.color.theme as theme
 import pwndbg.commands
 import pwndbg.config
-import pwndbg.hexdump
-import pwndbg.memory
-import pwndbg.regs
+import pwndbg.gdb.arch
+import pwndbg.gdb.memory
+import pwndbg.gdb.regs
+import pwndbg.lib.hexdump
+
+theme.Parameter(
+    "hexdump-colorize-ascii", True, "whether to colorize the hexdump command ascii section"
+)
+theme.Parameter("hexdump-ascii-block-separator", "│", "block separator char of the hexdump command")
+theme.Parameter(
+    "hexdump-byte-separator",
+    " ",
+    "separator of single bytes in hexdump (does NOT affect group separator)",
+)
+
 
 pwndbg.config.Parameter("hexdump-width", 16, "line width of hexdump command")
 pwndbg.config.Parameter("hexdump-bytes", 64, "number of bytes printed by hexdump command")
@@ -28,7 +43,7 @@ def address_or_module_name(s):
     gdbval_or_str = pwndbg.commands.sloppy_gdb_parse(s)
     if isinstance(gdbval_or_str, str):
         module_name = gdbval_or_str
-        pages = list(filter(lambda page: module_name in page.objfile, pwndbg.vmmap.get()))
+        pages = list(filter(lambda page: module_name in page.objfile, pwndbg.gdb.vmmap.get()))
         if pages:
             return pages[0].vaddr
         else:
@@ -65,28 +80,29 @@ def hexdump(address=None, count=pwndbg.config.hexdump_bytes):
         hexdump.offset = 0
 
     address = int(address)
-    address &= pwndbg.arch.ptrmask
+    address &= pwndbg.gdb.arch.ptrmask
     count = max(int(count), 0)
     width = int(pwndbg.config.hexdump_width)
     group_width = int(pwndbg.config.hexdump_group_width)
-    group_width = pwndbg.typeinfo.ptrsize if group_width == -1 else group_width
+    group_width = pwndbg.gdb.typeinfo.ptrsize if group_width == -1 else group_width
     flip_group_endianess = (
-        pwndbg.config.hexdump_group_use_big_endian and pwndbg.arch.endian == "little"
+        pwndbg.config.hexdump_group_use_big_endian and pwndbg.gdb.arch.endian == "little"
     )
 
     if count > address > 0x10000:
         count -= address
 
     try:
-        data = pwndbg.memory.read(address, count, partial=True)
+        data = pwndbg.gdb.memory.read(address, count, partial=True)
         hexdump.last_address = address + count
     except gdb.error as e:
         print(e)
         return
 
     for i, line in enumerate(
-        pwndbg.hexdump.hexdump(
+        pwndbg.lib.hexdump.hexdump(
             data,
+            H=pwndbg.color.hexdump,
             address=address,
             width=width,
             group_width=group_width,

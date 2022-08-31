@@ -1,6 +1,5 @@
 import argparse
 import functools
-import io
 
 import gdb
 
@@ -9,10 +8,10 @@ import pwndbg.color
 import pwndbg.color.message as message
 import pwndbg.enhance
 import pwndbg.exception
-import pwndbg.hexdump
-import pwndbg.memory
-import pwndbg.regs
-import pwndbg.symbol
+import pwndbg.gdb.memory
+import pwndbg.gdb.regs
+import pwndbg.gdb.symbol
+import pwndbg.lib.hexdump
 import pwndbg.ui
 
 commands = []
@@ -195,7 +194,7 @@ def fix(arg, sloppy=False, quiet=True, reraise=False):
         pass
 
     try:
-        arg = pwndbg.regs.fix(arg)
+        arg = pwndbg.gdb.regs.fix(arg)
         return gdb.parse_and_eval(arg)
     except Exception as e:
         if not quiet:
@@ -221,10 +220,10 @@ def fix_int_reraise(*a, **kw):
 def OnlyWithFile(function):
     @functools.wraps(function)
     def _OnlyWithFile(*a, **kw):
-        if pwndbg.proc.exe:
+        if pwndbg.gdb.proc.exe:
             return function(*a, **kw)
         else:
-            if pwndbg.qemu.is_qemu():
+            if pwndbg.gdb.qemu.is_qemu():
                 print(message.error("Could not determine the target binary on QEMU."))
             else:
                 print(message.error("%s: There is no file loaded." % function.__name__))
@@ -235,7 +234,7 @@ def OnlyWithFile(function):
 def OnlyWhenRunning(function):
     @functools.wraps(function)
     def _OnlyWhenRunning(*a, **kw):
-        if pwndbg.proc.alive:
+        if pwndbg.gdb.proc.alive:
             return function(*a, **kw)
         else:
             print("%s: The program is not being run." % function.__name__)
@@ -269,11 +268,11 @@ def OnlyWhenHeapIsInitialized(function):
 
 
 def OnlyAmd64(function):
-    """Decorates function to work only when pwndbg.arch.current == \"x86-64\"."""
+    """Decorates function to work only when pwndbg.gdb.arch.current == \"x86-64\"."""
 
     @functools.wraps(function)
     def _OnlyAmd64(*a, **kw):
-        if pwndbg.arch.current == "x86-64":
+        if pwndbg.gdb.arch.current == "x86-64":
             return function(*a, **kw)
         else:
             print('%s: Only works with "x86-64" arch.' % function.__name__)
@@ -322,12 +321,13 @@ class _ArgparsedCommand(Command):
         else:
             self.parser.prog = command_name
 
-        file = io.StringIO()
-        self.parser.print_help(file)
-        file.seek(0)
-        self.__doc__ = file.read()
-        # Note: function.__doc__ is used in the `pwndbg [filter]` command display
-        function.__doc__ = self.parser.description.strip()
+        # TODO/FIXME: Can we also append the generated positional args?
+        # E.g. "-f --flag  This does something"
+        doc = self.parser.description.strip()
+        if self.parser.epilog:
+            doc += "\n" + self.parser.epilog
+
+        self.__doc__ = function.__doc__ = doc
 
         super(_ArgparsedCommand, self).__init__(function, command_name=command_name, *a, **kw)
 
@@ -364,7 +364,7 @@ class ArgparsedCommand:
         return _ArgparsedCommand(self.parser, function)
 
 
-# We use a 64-bit max value literal here instead of pwndbg.arch.current
+# We use a 64-bit max value literal here instead of pwndbg.gdb.arch.current
 # as realistically its ok to pull off the biggest possible type here
 # We cache its GDB value type which is 'unsigned long long'
 _mask = 0xFFFFFFFFFFFFFFFF

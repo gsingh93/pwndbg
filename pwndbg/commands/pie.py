@@ -3,10 +3,10 @@ import os
 
 import gdb
 
-import pwndbg.auxv
 import pwndbg.color.message as message
 import pwndbg.commands
-import pwndbg.vmmap
+import pwndbg.gdb.auxv
+import pwndbg.gdb.vmmap
 
 
 def get_exe_name():
@@ -19,7 +19,7 @@ def get_exe_name():
 
     NOTE: This might be wrong for remote targets.
     """
-    path = pwndbg.auxv.get().get("AT_EXECFN")
+    path = pwndbg.gdb.auxv.get().get("AT_EXECFN")
 
     # When GDB is launched on a file that is a symlink to the target,
     # the AUXV's AT_EXECFN stores the absolute path of to the symlink.
@@ -37,12 +37,12 @@ def get_exe_name():
         # We want just 'a.out'
         return os.path.normpath(real_path)
 
-    return pwndbg.proc.exe
+    return pwndbg.gdb.proc.exe
 
 
 def translate_addr(offset, module):
     mod_filter = lambda page: module in page.objfile
-    pages = list(filter(mod_filter, pwndbg.vmmap.get()))
+    pages = list(filter(mod_filter, pwndbg.gdb.vmmap.get()))
 
     if not pages:
         print(

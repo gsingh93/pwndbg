@@ -16,20 +16,20 @@ file_lists = {}  # This saves all comments.
 @pwndbg.commands.OnlyWhenRunning
 def comm(addr=None, comment=None):
     if addr is None:
-        addr = hex(pwndbg.regs.pc)
+        addr = hex(pwndbg.gdb.regs.pc)
     try:
         with open(".gdb_comments", "a+") as f:
             target = int(addr, 0)
 
-            if not pwndbg.memory.peek(target):
+            if not pwndbg.gdb.memory.peek(target):
                 print(message.error("Invalid Address %#x" % target))
 
             else:
-                f.write("file:%s=" % pwndbg.proc.exe)
+                f.write("file:%s=" % pwndbg.gdb.proc.exe)
                 f.write("%#x:%s\n" % (target, comment))
-                if pwndbg.proc.exe not in file_lists.keys():
-                    file_lists[pwndbg.proc.exe] = {}
-                file_lists[pwndbg.proc.exe][hex(target)] = comment
+                if pwndbg.gdb.proc.exe not in file_lists.keys():
+                    file_lists[pwndbg.gdb.proc.exe] = {}
+                file_lists[pwndbg.gdb.proc.exe][hex(target)] = comment
     except Exception:
         print(message.error("Permission denied to create file"))
 

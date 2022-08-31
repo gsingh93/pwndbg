@@ -1,5 +1,5 @@
-:mod:`pwndbg.abi` --- ABI Agnosticity
+:mod:`pwndbg.gdb.abi` --- ABI Agnosticity
 =============================================
 
-.. automodule:: pwndbg.abi
+.. automodule:: pwndbg.gdb.abi
     :members:

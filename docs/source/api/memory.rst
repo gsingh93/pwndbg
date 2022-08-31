@@ -1,5 +1,5 @@
-:mod:`pwndbg.memory` --- Memory Manipulation
+:mod:`pwndbg.gdb.memory` --- Memory Manipulation
 =============================================
 
-.. automodule:: pwndbg.memory
+.. automodule:: pwndbg.gdb.memory
     :members:

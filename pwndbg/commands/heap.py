@@ -8,8 +8,8 @@ import pwndbg.color.context as C
 import pwndbg.color.memory as M
 import pwndbg.commands
 import pwndbg.config
-import pwndbg.glibc
-import pwndbg.typeinfo
+import pwndbg.gdb.glibc
+import pwndbg.gdb.typeinfo
 from pwndbg.color import generateColorFunction
 from pwndbg.color import message
 from pwndbg.commands.config import extend_value_with_default
@@ -27,7 +27,7 @@ def read_chunk(addr):
         "mchunk_prev_size": "prev_size",
     }
     if not pwndbg.config.resolve_heap_via_heuristic:
-        val = pwndbg.typeinfo.read_gdbvalue("struct malloc_chunk", addr)
+        val = pwndbg.gdb.typeinfo.read_gdbvalue("struct malloc_chunk", addr)
     else:
         val = pwndbg.heap.current.malloc_chunk(addr)
     return dict({renames.get(key, key): int(val[key]) for key in val.type.keys()})
@@ -49,11 +49,11 @@ def format_bin(bins, verbose=False, offset=None):
         # fastbins consists of only single linked list
         if bins_type == "fastbins":
             chain_fd = b
-            safe_lnk = pwndbg.glibc.check_safe_linking()
+            safe_lnk = pwndbg.gdb.glibc.check_safe_linking()
         # tcachebins consists of single linked list and entries count
         elif bins_type == "tcachebins":
             chain_fd, count = b
-            safe_lnk = pwndbg.glibc.check_safe_linking()
+            safe_lnk = pwndbg.gdb.glibc.check_safe_linking()
         # normal bins consists of double linked list and may be corrupted (we can detect corruption)
         else:  # normal bin
             chain_fd, chain_bk, is_chain_corrupted = b
@@ -142,14 +142,14 @@ def heap(addr=None, verbose=False, simple=False):
         cursor = heap_region.start
     else:
         cursor = heap_region.start + allocator.heap_info.sizeof
-        if pwndbg.vmmap.find(allocator.get_heap(heap_region.start)["ar_ptr"]) == heap_region:
+        if pwndbg.gdb.vmmap.find(allocator.get_heap(heap_region.start)["ar_ptr"]) == heap_region:
             # Round up to a 2-machine-word alignment after an arena to
             # compensate for the presence of the have_fastchunks variable
             # in GLIBC versions >= 2.27.
             cursor += (allocator.malloc_state.sizeof + ptr_size) & ~allocator.malloc_align_mask
 
     # i686 alignment heuristic
-    first_chunk_size = pwndbg.arch.unpack(pwndbg.memory.read(cursor + ptr_size, ptr_size))
+    first_chunk_size = pwndbg.gdb.arch.unpack(pwndbg.gdb.memory.read(cursor + ptr_size, ptr_size))
     if first_chunk_size == 0:
         cursor += ptr_size * 2
 
@@ -159,7 +159,7 @@ def heap(addr=None, verbose=False, simple=False):
         if cursor == top_chunk:
             break
 
-        size_field = pwndbg.memory.u(cursor + allocator.chunk_key_offset("size"))
+        size_field = pwndbg.gdb.memory.u(cursor + allocator.chunk_key_offset("size"))
         real_size = size_field & ~allocator.malloc_align_mask
         cursor += real_size
 
@@ -250,7 +250,7 @@ def top_chunk(addr=None):
     allocator = pwndbg.heap.current
     arena = allocator.get_arena(addr)
     address = arena["top"]
-    size = pwndbg.memory.u(int(address) + allocator.chunk_key_offset("size"))
+    size = pwndbg.gdb.memory.u(int(address) + allocator.chunk_key_offset("size"))
 
     out = message.off("Top chunk\n") + "Addr: {}\nSize: 0x{:02x}".format(M.get(address), size)
     print(out)
@@ -282,7 +282,7 @@ def malloc_chunk(addr, fake=False, verbose=False, simple=False):
     allocator = pwndbg.heap.current
     ptr_size = allocator.size_sz
 
-    size_field = pwndbg.memory.u(cursor + allocator.chunk_key_offset("size"))
+    size_field = pwndbg.gdb.memory.u(cursor + allocator.chunk_key_offset("size"))
     real_size = size_field & ~allocator.malloc_align_mask
 
     headers_to_print = []  # both state (free/allocated) and flags
@@ -385,7 +385,7 @@ def malloc_chunk(addr, fake=False, verbose=False, simple=False):
     for field_to_print in fields_ordered:
         if field_to_print in fields_to_print:
             out_fields += message.system(field_to_print) + ": 0x{:02x}\n".format(
-                pwndbg.memory.u(cursor + allocator.chunk_key_offset(field_to_print))
+                pwndbg.gdb.memory.u(cursor + allocator.chunk_key_offset(field_to_print))
             )
 
     print(" | ".join(headers_to_print) + "\n" + out_fields)
@@ -571,7 +571,7 @@ parser.add_argument("size", nargs="?", type=int, default=None, help="Size of fak
 @pwndbg.commands.OnlyWhenHeapIsInitialized
 def find_fake_fast(addr, size=None):
     """Find candidate fake fast chunks overlapping the specified address."""
-    psize = pwndbg.arch.ptrsize
+    psize = pwndbg.gdb.arch.ptrsize
     allocator = pwndbg.heap.current
     align = allocator.malloc_alignment
     min_fast = allocator.min_chunk_size
@@ -585,9 +585,9 @@ def find_fake_fast(addr, size=None):
             )
         )
         start = 0  # TODO, maybe some better way to handle case when global_max_fast is overwritten with something large
-    mem = pwndbg.memory.read(start, max_fast - psize, partial=True)
+    mem = pwndbg.gdb.memory.read(start, max_fast - psize, partial=True)
 
-    fmt = {"little": "<", "big": ">"}[pwndbg.arch.endian] + {4: "I", 8: "Q"}[psize]
+    fmt = {"little": "<", "big": ">"}[pwndbg.gdb.arch.endian] + {4: "I", 8: "Q"}[psize]
 
     if size is None:
         sizes = range(min_fast, max_fast + 1, align)
@@ -645,7 +645,7 @@ def vis_heap_chunks(addr=None, count=None, naive=None):
         cursor = heap_region.start
     else:
         cursor = heap_region.start + allocator.heap_info.sizeof
-        if pwndbg.vmmap.find(allocator.get_heap(heap_region.start)["ar_ptr"]) == heap_region:
+        if pwndbg.gdb.vmmap.find(allocator.get_heap(heap_region.start)["ar_ptr"]) == heap_region:
             # Round up to a 2-machine-word alignment after an arena to
             # compensate for the presence of the have_fastchunks variable
             # in GLIBC versions >= 2.27.
@@ -653,7 +653,7 @@ def vis_heap_chunks(addr=None, count=None, naive=None):
 
     # Check if there is an alignment at the start of the heap, adjust if necessary.
     if not addr:
-        first_chunk_size = pwndbg.arch.unpack(pwndbg.memory.read(cursor + ptr_size, ptr_size))
+        first_chunk_size = pwndbg.gdb.arch.unpack(pwndbg.gdb.memory.read(cursor + ptr_size, ptr_size))
         if first_chunk_size == 0:
             cursor += ptr_size * 2
 
@@ -665,7 +665,7 @@ def vis_heap_chunks(addr=None, count=None, naive=None):
             chunk_delims.append(heap_region.end)
             break
 
-        size_field = pwndbg.memory.u(cursor + ptr_size)
+        size_field = pwndbg.gdb.memory.u(cursor + ptr_size)
         real_size = size_field & ~allocator.malloc_align_mask
         prev_inuse = allocator.chunk_flags(size_field)[0]
 
@@ -720,7 +720,7 @@ def vis_heap_chunks(addr=None, count=None, naive=None):
             if printed % 2 == 0:
                 out += "\n0x%x" % cursor
 
-            cell = pwndbg.arch.unpack(pwndbg.memory.read(cursor, ptr_size))
+            cell = pwndbg.gdb.arch.unpack(pwndbg.gdb.memory.read(cursor, ptr_size))
             cell_hex = "\t0x{:0{n}x}".format(cell, n=ptr_size * 2)
 
             out += color_func(cell_hex)
@@ -730,7 +730,7 @@ def vis_heap_chunks(addr=None, count=None, naive=None):
             if cursor == top_chunk:
                 labels.append("Top chunk")
 
-            asc += bin_ascii(pwndbg.memory.read(cursor, ptr_size))
+            asc += bin_ascii(pwndbg.gdb.memory.read(cursor, ptr_size))
             if printed % 2 == 0:
                 out += (
                     "\t" + color_func(asc) + ("\t <-- " + ", ".join(labels) if len(labels) else "")
@@ -800,9 +800,9 @@ def try_free(addr):
     addr = int(addr)
 
     # check hook
-    free_hook = pwndbg.symbol.address("__free_hook")
+    free_hook = pwndbg.gdb.symbol.address("__free_hook")
     if free_hook is not None:
-        if pwndbg.memory.pvoid(free_hook) != 0:
+        if pwndbg.gdb.memory.pvoid(free_hook) != 0:
             print(message.success("__libc_free: will execute __free_hook"))
 
     # free(0) has no effect
@@ -820,7 +820,7 @@ def try_free(addr):
     malloc_align_mask = allocator.malloc_align_mask
     chunk_minsize = allocator.minsize
 
-    ptr_size = pwndbg.arch.ptrsize
+    ptr_size = pwndbg.gdb.arch.ptrsize
 
     def unsigned_size(size):
         # read_chunk()['size'] is signed in pwndbg ;/
@@ -913,7 +913,7 @@ def try_free(addr):
             print(message.notice("Tcache checks"))
             e = addr + 2 * size_sz
             e += allocator.tcache_entry.keys().index("key") * ptr_size
-            e = pwndbg.memory.pvoid(e)
+            e = pwndbg.gdb.memory.pvoid(e)
             tcache_addr = int(allocator.thread_cache.address)
             if e == tcache_addr:
                 # todo, actually do checks

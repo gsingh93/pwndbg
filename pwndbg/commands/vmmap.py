@@ -9,8 +9,8 @@ from elftools.elf.elffile import ELFFile
 
 import pwndbg.color.memory as M
 import pwndbg.commands
-import pwndbg.elf
-import pwndbg.vmmap
+import pwndbg.gdb.elf
+import pwndbg.gdb.vmmap
 
 integer_types = (int, gdb.Value)
 
@@ -54,7 +54,7 @@ parser.add_argument("-x", "--executable", action="store_true", help="Display exe
 @pwndbg.commands.ArgparsedCommand(parser, aliases=["lm", "address", "vprot"])
 @pwndbg.commands.OnlyWhenRunning
 def vmmap(gdbval_or_str=None, writable=False, executable=False):
-    pages = pwndbg.vmmap.get()
+    pages = pwndbg.gdb.vmmap.get()
 
     if gdbval_or_str:
         pages = list(filter(pages_filter(gdbval_or_str), pages))
@@ -74,7 +74,7 @@ def vmmap(gdbval_or_str=None, writable=False, executable=False):
                 continue
             print(M.get(page.vaddr, text=str(page)))
 
-    if pwndbg.qemu.is_qemu():
+    if pwndbg.gdb.qemu.is_qemu():
         print("\n[QEMU target detected - vmmap result might not be accurate; see `help vmmap`]")
 
 
@@ -96,9 +96,9 @@ parser.add_argument(
 @pwndbg.commands.ArgparsedCommand(parser)
 def vmmap_add(start, size, flags, offset):
     page_flags = {
-        "r": pwndbg.elf.PF_R,
-        "w": pwndbg.elf.PF_W,
-        "x": pwndbg.elf.PF_X,
+        "r": pwndbg.gdb.elf.PF_R,
+        "w": pwndbg.gdb.elf.PF_W,
+        "x": pwndbg.gdb.elf.PF_X,
     }
     perm = 0
     for flag in flags:
@@ -108,15 +108,15 @@ def vmmap_add(start, size, flags, offset):
             return
         perm |= flag_val
 
-    page = pwndbg.memory.Page(start, size, perm, offset)
-    pwndbg.vmmap.add_custom_page(page)
+    page = pwndbg.lib.memory.Page(start, size, perm, offset)
+    pwndbg.gdb.vmmap.add_custom_page(page)
 
     print("%r added" % page)
 
 
 @pwndbg.commands.ArgparsedCommand("Clear the vmmap cache.")  # TODO is this accurate?
 def vmmap_clear():
-    pwndbg.vmmap.clear_custom_page()
+    pwndbg.gdb.vmmap.clear_custom_page()
 
 
 parser = argparse.ArgumentParser()
@@ -129,7 +129,7 @@ parser.add_argument(
 @pwndbg.commands.ArgparsedCommand(parser)
 def vmmap_load(filename):
     if filename is None:
-        filename = pwndbg.file.get_file(pwndbg.proc.exe)
+        filename = pwndbg.file.get_file(pwndbg.gdb.proc.exe)
 
     print('Load "%s" ...' % filename)
 
@@ -155,15 +155,15 @@ def vmmap_load(filename):
                 continue
 
             # Guess the segment flags from section flags
-            flags = pwndbg.elf.PF_R
+            flags = pwndbg.gdb.elf.PF_R
             if sh_flags & SH_FLAGS.SHF_WRITE:
-                flags |= pwndbg.elf.PF_W
+                flags |= pwndbg.gdb.elf.PF_W
             if sh_flags & SH_FLAGS.SHF_EXECINSTR:
-                flags |= pwndbg.elf.PF_X
+                flags |= pwndbg.gdb.elf.PF_X
 
-            page = pwndbg.memory.Page(vaddr, memsz, flags, offset, filename)
+            page = pwndbg.lib.memory.Page(vaddr, memsz, flags, offset, filename)
             pages.append(page)
 
     for page in pages:
-        pwndbg.vmmap.add_custom_page(page)
+        pwndbg.gdb.vmmap.add_custom_page(page)
         print("%r added" % page)

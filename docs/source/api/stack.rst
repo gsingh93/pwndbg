@@ -1,5 +1,5 @@
-:mod:`pwndbg.stack` --- pwndbg.stack
+:mod:`pwndbg.gdb.stack` --- pwndbg.gdb.stack
 =============================================
 
-.. automodule:: pwndbg.stack
+.. automodule:: pwndbg.gdb.stack
     :members:

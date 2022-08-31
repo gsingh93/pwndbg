@@ -1,10 +1,10 @@
 from capstone import *
 from capstone.x86 import *
 
-import pwndbg.arch
-import pwndbg.memory
-import pwndbg.regs
-import pwndbg.typeinfo
+import pwndbg.gdb.arch
+import pwndbg.gdb.memory
+import pwndbg.gdb.regs
+import pwndbg.gdb.typeinfo
 
 groups = {v: k for k, v in globals().items() if k.startswith("X86_GRP_")}
 ops = {v: k for k, v in globals().items() if k.startswith("X86_OP_")}
@@ -18,14 +18,14 @@ class DisassemblyAssistant(pwndbg.disasm.arch.DisassemblyAssistant):
     def regs(self, instruction, reg):
         if reg == X86_REG_RIP:
             return instruction.address + instruction.size
-        elif instruction.address == pwndbg.regs.pc:
+        elif instruction.address == pwndbg.gdb.regs.pc:
             name = instruction.reg_name(reg)
-            return pwndbg.regs[name]
+            return pwndbg.gdb.regs[name]
         else:
             return None
 
     def memory(self, instruction, op):
-        current = instruction.address == pwndbg.regs.pc
+        current = instruction.address == pwndbg.gdb.regs.pc
 
         # The only register we can reason about if it's *not* the current
         # instruction is $rip.  For example:
@@ -77,7 +77,7 @@ class DisassemblyAssistant(pwndbg.disasm.arch.DisassemblyAssistant):
             if arith:
                 sz += " + "
 
-            index = pwndbg.regs[instruction.reg_name(index)]
+            index = pwndbg.gdb.regs[instruction.reg_name(index)]
             sz += "%s*%#x" % (index, scale)
             arith = True
 
@@ -103,7 +103,7 @@ class DisassemblyAssistant(pwndbg.disasm.arch.DisassemblyAssistant):
             return super(DisassemblyAssistant, self).next(instruction, call)
 
         # Stop disassembling at RET if we won't know where it goes to
-        if instruction.address != pwndbg.regs.pc:
+        if instruction.address != pwndbg.gdb.regs.pc:
             return None
 
         # Otherwise, resolve the return on the stack
@@ -111,10 +111,10 @@ class DisassemblyAssistant(pwndbg.disasm.arch.DisassemblyAssistant):
         if instruction.operands:
             pop = instruction.operands[0].int
 
-        address = (pwndbg.regs.sp) + (pwndbg.arch.ptrsize * pop)
+        address = (pwndbg.gdb.regs.sp) + (pwndbg.gdb.arch.ptrsize * pop)
 
-        if pwndbg.memory.peek(address):
-            return int(pwndbg.memory.poi(pwndbg.typeinfo.ppvoid, address))
+        if pwndbg.gdb.memory.peek(address):
+            return int(pwndbg.gdb.memory.poi(pwndbg.gdb.typeinfo.ppvoid, address))
 
     def condition(self, instruction):
         # JMP is unconditional
@@ -122,10 +122,10 @@ class DisassemblyAssistant(pwndbg.disasm.arch.DisassemblyAssistant):
             return None
 
         # We can't reason about anything except the current instruction
-        if instruction.address != pwndbg.regs.pc:
+        if instruction.address != pwndbg.gdb.regs.pc:
             return False
 
-        efl = pwndbg.regs.eflags
+        efl = pwndbg.gdb.regs.eflags
 
         cf = efl & (1 << 0)
         pf = efl & (1 << 2)

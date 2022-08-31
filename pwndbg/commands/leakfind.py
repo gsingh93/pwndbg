@@ -11,7 +11,7 @@ import pwndbg.color.chain as C
 import pwndbg.color.memory as M
 import pwndbg.color.message as message
 import pwndbg.commands
-import pwndbg.vmmap
+import pwndbg.gdb.vmmap
 from pwndbg.chain import config_arrow_right
 
 
@@ -19,7 +19,7 @@ from pwndbg.chain import config_arrow_right
 # addr is a pointer. It is taken to be a child pointer.
 # visited_map is a map of children -> (parent,parent_start)
 def get_rec_addr_string(addr, visited_map):
-    page = pwndbg.vmmap.find(addr)
+    page = pwndbg.gdb.vmmap.find(addr)
     arrow_right = C.arrow(" %s " % config_arrow_right)
 
     if page is not None:
@@ -101,12 +101,12 @@ def leakfind(
 ):
     if address is None:
         raise argparse.ArgumentTypeError("No starting address provided.")
-    foundPages = pwndbg.vmmap.find(address)
+    foundPages = pwndbg.gdb.vmmap.find(address)
 
     if not foundPages:
         raise argparse.ArgumentTypeError("Starting address is not mapped.")
 
-    if not pwndbg.memory.peek(address):
+    if not pwndbg.gdb.memory.peek(address):
         raise argparse.ArgumentTypeError("Unable to read from starting address.")
 
     max_depth = int(max_depth)
@@ -132,8 +132,8 @@ def leakfind(
     time_to_depth_increase = 0
 
     # Run a bfs
-    # TODO look into performance gain from checking if an address is mapped before calling pwndbg.memory.pvoid()
-    # TODO also check using pwndbg.memory.read for possible performance boosts.
+    # TODO look into performance gain from checking if an address is mapped before calling pwndbg.gdb.memory.pvoid()
+    # TODO also check using pwndbg.gdb.memory.read for possible performance boosts.
     while address_queue.qsize() > 0 and depth < max_depth:
         if time_to_depth_increase == 0:
             depth = depth + 1
@@ -144,8 +144,8 @@ def leakfind(
             cur_start_addr - negative_offset, cur_start_addr + max_offset, stride
         ):
             try:
-                cur_addr &= pwndbg.arch.ptrmask
-                result = int(pwndbg.memory.pvoid(cur_addr))
+                cur_addr &= pwndbg.gdb.arch.ptrmask
+                result = int(pwndbg.gdb.memory.pvoid(cur_addr))
                 if result in visited_map or result in visited_set:
                     continue
                 visited_map[result] = (
@@ -163,7 +163,7 @@ def leakfind(
     arrow_right = C.arrow(" %s " % config_arrow_right)
 
     for child in visited_map:
-        child_page = pwndbg.vmmap.find(child)
+        child_page = pwndbg.gdb.vmmap.find(child)
         if child_page is not None:
             if page_name is not None and page_name not in child_page.objfile:
                 continue
@@ -184,5 +184,5 @@ def leakfind(
         for line in output_map[chain_length]:
             print(line)
 
-    if pwndbg.qemu.is_qemu():
+    if pwndbg.gdb.qemu.is_qemu():
         print("\n[QEMU target detected - leakfind result might not be accurate; see `help vmmap`]")

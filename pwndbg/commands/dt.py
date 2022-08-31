@@ -4,8 +4,8 @@ import gdb
 
 import pwndbg.color
 import pwndbg.commands
-import pwndbg.dt
-import pwndbg.vmmap
+import pwndbg.gdb.dt
+import pwndbg.gdb.vmmap
 
 parser = argparse.ArgumentParser()
 parser.description = """
@@ -28,4 +28,4 @@ def dt(typename, address=None):
     """
     if address is not None:
         address = pwndbg.commands.fix(address)
-    print(pwndbg.dt.dt(typename, addr=address))
+    print(pwndbg.gdb.dt.dt(typename, addr=address))

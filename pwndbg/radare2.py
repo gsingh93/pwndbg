@@ -1,11 +1,11 @@
 import gdb
 
-import pwndbg.elf
-import pwndbg.memoize
+import pwndbg.gdb.elf
+import pwndbg.lib.memoize
 
 
-@pwndbg.memoize.reset_on_start
-@pwndbg.memoize.reset_on_objfile
+@pwndbg.lib.memoize.reset_on_start
+@pwndbg.lib.memoize.reset_on_objfile
 def r2pipe():
     """
     Spawn and return a r2pipe handle for the current process file.
@@ -27,8 +27,8 @@ def r2pipe():
     import r2pipe
 
     flags = ["-e", "io.cache=true"]
-    if pwndbg.elf.get_elf_info(filename).is_pie and pwndbg.elf.exe():
-        flags.extend(["-B", hex(pwndbg.elf.exe().address)])
+    if pwndbg.gdb.elf.get_elf_info(filename).is_pie and pwndbg.gdb.elf.exe():
+        flags.extend(["-B", hex(pwndbg.gdb.elf.exe().address)])
     r2 = r2pipe.open(filename, flags=flags)
     r2.cmd("aaaa")
     return r2

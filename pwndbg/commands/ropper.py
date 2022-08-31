@@ -5,7 +5,7 @@ import tempfile
 import gdb
 
 import pwndbg.commands
-import pwndbg.vmmap
+import pwndbg.gdb.vmmap
 
 parser = argparse.ArgumentParser(
     description="ROP gadget search with ropper.",
@@ -20,11 +20,11 @@ def ropper(argument):
     with tempfile.NamedTemporaryFile() as corefile:
 
         # If the process is running, dump a corefile so we get actual addresses.
-        if pwndbg.proc.alive:
+        if pwndbg.gdb.proc.alive:
             filename = corefile.name
             gdb.execute("gcore %s" % filename)
         else:
-            filename = pwndbg.proc.exe
+            filename = pwndbg.gdb.proc.exe
 
         # Build up the command line to run
         cmd = ["ropper", "--file", filename]

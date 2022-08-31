@@ -1,5 +1,5 @@
-:mod:`pwndbg.qemu` --- pwndbg.qemu
+:mod:`pwndbg.gdb.qemu` --- pwndbg.gdb.qemu
 =============================================
 
-.. automodule:: pwndbg.qemu
+.. automodule:: pwndbg.gdb.qemu
     :members:

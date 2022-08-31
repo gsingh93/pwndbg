@@ -1,5 +1,5 @@
-:mod:`pwndbg.gcc` --- pwndbg.gcc
+:mod:`pwndbg.lib.gcc` --- pwndbg.lib.gcc
 =============================================
 
-.. automodule:: pwndbg.gcc
+.. automodule:: pwndbg.lib.gcc
     :members:

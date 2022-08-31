@@ -18,18 +18,18 @@ parser.add_argument("arguments", nargs="*", type=str, help="Arguments to pass to
 @pwndbg.commands.ArgparsedCommand(parser, aliases=["radare2"])
 @pwndbg.commands.OnlyWithFile
 def r2(arguments, no_seek=False, no_rebase=False):
-    filename = pwndbg.file.get_file(pwndbg.proc.exe)
+    filename = pwndbg.file.get_file(pwndbg.gdb.proc.exe)
 
     # Build up the command line to run
     cmd = ["radare2"]
     flags = ["-e", "io.cache=true"]
-    if pwndbg.proc.alive:
-        addr = pwndbg.regs.pc
-        if pwndbg.elf.get_elf_info(filename).is_pie:
+    if pwndbg.gdb.proc.alive:
+        addr = pwndbg.gdb.regs.pc
+        if pwndbg.gdb.elf.get_elf_info(filename).is_pie:
             if no_rebase:
-                addr -= pwndbg.elf.exe().address
+                addr -= pwndbg.gdb.elf.exe().address
             else:
-                flags.extend(["-B", hex(pwndbg.elf.exe().address)])
+                flags.extend(["-B", hex(pwndbg.gdb.elf.exe().address)])
         if not no_seek:
             cmd.extend(["-s", hex(addr)])
     cmd.extend(flags)

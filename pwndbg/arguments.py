@@ -6,19 +6,19 @@ import gdb
 from capstone import CS_GRP_CALL
 from capstone import CS_GRP_INT
 
-import pwndbg.abi
-import pwndbg.arch
 import pwndbg.chain
 import pwndbg.color.nearpc as N
 import pwndbg.constants
 import pwndbg.disasm
-import pwndbg.funcparser
-import pwndbg.functions
+import pwndbg.gdb.arch
+import pwndbg.gdb.memory
+import pwndbg.gdb.regs
+import pwndbg.gdb.symbol
+import pwndbg.gdb.typeinfo
 import pwndbg.ida
-import pwndbg.memory
-import pwndbg.regs
-import pwndbg.symbol
-import pwndbg.typeinfo
+import pwndbg.lib.abi
+import pwndbg.lib.funcparser
+import pwndbg.lib.functions
 
 ida_replacements = {
     "__int64": "signed long long int",
@@ -52,7 +52,7 @@ def get_syscall_name(instruction):
     if CS_GRP_INT not in instruction.groups:
         return None
 
-    syscall_register = pwndbg.abi.ABI.syscall().syscall_register
+    syscall_register = pwndbg.lib.abi.ABI.syscall().syscall_register
 
     # If we are on x86/x64, return no syscall name for other instructions than syscall and int 0x80
     if syscall_register in ("eax", "rax"):
@@ -60,7 +60,7 @@ def get_syscall_name(instruction):
         if not (mnemonic == "syscall" or (mnemonic == "int" and instruction.op_str == "0x80")):
             return None
 
-    syscall_number = getattr(pwndbg.regs, syscall_register)
+    syscall_number = getattr(pwndbg.gdb.regs, syscall_register)
     return pwndbg.constants.syscall(syscall_number) or "<unk_%d>" % syscall_number
 
 
@@ -76,12 +76,12 @@ def get(instruction):
     if instruction is None:
         return []
 
-    if instruction.address != pwndbg.regs.pc:
+    if instruction.address != pwndbg.gdb.regs.pc:
         return []
 
     if CS_GRP_CALL in instruction.groups:
         try:
-            abi = pwndbg.abi.ABI.default()
+            abi = pwndbg.lib.abi.ABI.default()
         except KeyError:
             return []
 
@@ -94,13 +94,13 @@ def get(instruction):
         if not target:
             return []
 
-        name = pwndbg.symbol.get(target)
+        name = pwndbg.gdb.symbol.get(target)
         if not name:
             return []
     elif CS_GRP_INT in instruction.groups:
         # Get the syscall number and name
         name = get_syscall_name(instruction)
-        abi = pwndbg.abi.ABI.syscall()
+        abi = pwndbg.lib.abi.ABI.syscall()
         target = None
 
         if name is None:
@@ -118,11 +118,11 @@ def get(instruction):
     # If we have particular `XXX_chk` function in our database, we use it.
     # Otherwise, we show args for its unchecked version.
     # We also lstrip `_` in here, as e.g. `__printf_chk` needs the underscores.
-    if name not in pwndbg.functions.functions:
+    if name not in pwndbg.lib.functions.functions:
         name = name.replace("_chk", "")
         name = name.strip().lstrip("_")  # _malloc
 
-    func = pwndbg.functions.functions.get(name, None)
+    func = pwndbg.lib.functions.functions.get(name, None)
 
     # Try to extract the data from GDB.
     # Note that this is currently broken, pending acceptance of
@@ -146,12 +146,14 @@ def get(instruction):
             for k, v in ida_replacements.items():
                 typename = typename.replace(k, v)
 
-            func = pwndbg.funcparser.ExtractFuncDeclFromSource(typename + ";")
+            func = pwndbg.lib.funcparser.ExtractFuncDeclFromSource(typename + ";")
 
     if func:
         args = func.args
     else:
-        args = (pwndbg.functions.Argument("int", 0, argname(i, abi)) for i in range(n_args_default))
+        args = (
+            pwndbg.lib.functions.Argument("int", 0, argname(i, abi)) for i in range(n_args_default)
+        )
 
     for i, arg in enumerate(args):
         result.append((arg, argument(i, abi)))
@@ -160,7 +162,7 @@ def get(instruction):
 
 
 def argname(n, abi=None):
-    abi = abi or pwndbg.abi.ABI.default()
+    abi = abi or pwndbg.lib.abi.ABI.default()
     regs = abi.register_arguments
 
     if n < len(regs):
@@ -175,17 +177,17 @@ def argument(n, abi=None):
     instruction.
     Works only for ABIs that use registers for arguments.
     """
-    abi = abi or pwndbg.abi.ABI.default()
+    abi = abi or pwndbg.lib.abi.ABI.default()
     regs = abi.register_arguments
 
     if n < len(regs):
-        return getattr(pwndbg.regs, regs[n])
+        return getattr(pwndbg.gdb.regs, regs[n])
 
     n -= len(regs)
 
-    sp = pwndbg.regs.sp + (n * pwndbg.arch.ptrsize)
+    sp = pwndbg.gdb.regs.sp + (n * pwndbg.gdb.arch.ptrsize)
 
-    return int(pwndbg.memory.poi(pwndbg.typeinfo.ppvoid, sp))
+    return int(pwndbg.gdb.memory.poi(pwndbg.gdb.typeinfo.ppvoid, sp))
 
 
 def arguments(abi=None):
@@ -193,7 +195,7 @@ def arguments(abi=None):
     Yields (arg_name, arg_value) tuples for arguments from a given ABI.
     Works only for ABIs that use registers for arguments.
     """
-    abi = abi or pwndbg.abi.ABI.default()
+    abi = abi or pwndbg.lib.abi.ABI.default()
     regs = abi.register_arguments
 
     for i in range(len(regs)):
@@ -208,7 +210,7 @@ def format_args(instruction):
 
         # Enhance args display
         if arg.name == "fd" and isinstance(value, int):
-            path = pwndbg.file.readlink("/proc/%d/fd/%d" % (pwndbg.proc.pid, value))
+            path = pwndbg.file.readlink("/proc/%d/fd/%d" % (pwndbg.gdb.proc.pid, value))
             if path:
                 pretty += " (%s)" % path
 

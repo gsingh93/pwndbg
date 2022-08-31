@@ -33,12 +33,12 @@ def instruction(ins):
     is_branch = set(ins.groups) & capstone_branch_groups
 
     # Highlight the current line if enabled
-    if pwndbg.config.highlight_pc and ins.address == pwndbg.regs.pc:
+    if pwndbg.config.highlight_pc and ins.address == pwndbg.gdb.regs.pc:
         asm = C.highlight(asm)
 
     # tl;dr is a branch?
     if ins.target not in (None, ins.address + ins.size):
-        sym = pwndbg.symbol.get(ins.target) or None
+        sym = pwndbg.gdb.symbol.get(ins.target) or None
         target = M.get(ins.target)
         const = ins.target_const
         hextarget = hex(ins.target)

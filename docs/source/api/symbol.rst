@@ -1,5 +1,5 @@
-:mod:`pwndbg.symbol` --- pwndbg.symbol
+:mod:`pwndbg.gdb.symbol` --- pwndbg.gdb.symbol
 =============================================
 
-.. automodule:: pwndbg.symbol
+.. automodule:: pwndbg.gdb.symbol
     :members:

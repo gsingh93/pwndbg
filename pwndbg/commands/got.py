@@ -4,7 +4,7 @@ import pwndbg.chain
 import pwndbg.commands
 import pwndbg.enhance
 import pwndbg.file
-import pwndbg.which
+import pwndbg.lib.which
 import pwndbg.wrappers.checksec
 import pwndbg.wrappers.readelf
 from pwndbg.color import message
@@ -27,7 +27,7 @@ def got(name_filter=""):
         return
 
     if "PIE enabled" in pie_status:
-        bin_base = pwndbg.elf.exe().address
+        bin_base = pwndbg.gdb.elf.exe().address
 
     relro_color = message.off
     if "Partial" in relro_status:
@@ -51,7 +51,7 @@ def got(name_filter=""):
         ):  # if PIE, address is only the offset from the binary base address
             address_val = bin_base + address_val
 
-        got_address = pwndbg.memory.pvoid(address_val)
+        got_address = pwndbg.gdb.memory.pvoid(address_val)
         print(
             "[0x%x] %s -> %s" % (address_val, message.hint(name), pwndbg.chain.format(got_address))
         )

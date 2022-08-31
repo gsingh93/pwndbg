@@ -1,7 +1,7 @@
 from capstone import CS_GRP_JUMP
 
-import pwndbg.arch
 import pwndbg.disasm.x86
+import pwndbg.gdb.arch
 
 
 def is_jump_taken(instruction):
@@ -17,10 +17,10 @@ def is_jump_taken(instruction):
     """
     if CS_GRP_JUMP not in instruction.groups:
         return False
-    if pwndbg.regs.pc != instruction.address:
+    if pwndbg.gdb.regs.pc != instruction.address:
         return False
 
     return {
         "i386": pwndbg.disasm.x86.is_jump_taken,
         "x86-64": pwndbg.disasm.x86.is_jump_taken,
-    }.get(pwndbg.arch.current, lambda *a: False)(instruction)
+    }.get(pwndbg.gdb.arch.current, lambda *a: False)(instruction)

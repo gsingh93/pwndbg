@@ -1,7 +1,7 @@
 import pwndbg.color.message as message
 import pwndbg.config
+import pwndbg.gdb.symbol
 import pwndbg.heap.heap
-import pwndbg.symbol
 
 current = None
 
@@ -33,13 +33,13 @@ resolve_heap_via_heuristic = pwndbg.config.Parameter(
 )
 
 
-@pwndbg.events.start
+@pwndbg.gdb.events.start
 def update():
     resolve_heap(is_first_run=True)
 
 
-@pwndbg.events.stop
-@pwndbg.events.new_objfile
+@pwndbg.gdb.events.stop
+@pwndbg.gdb.events.new_objfile
 def reset():
     global current
     # Re-initialize the heap
@@ -56,7 +56,7 @@ def resolve_heap(is_first_run=False):
     global current
     if resolve_heap_via_heuristic:
         current = pwndbg.heap.ptmalloc.HeuristicHeap()
-        if not is_first_run and pwndbg.proc.alive and current.libc_has_debug_syms():
+        if not is_first_run and pwndbg.gdb.proc.alive and current.libc_has_debug_syms():
             print(
                 message.warn(
                     "You are going to resolve the heap via heuristic even though you have libc debug symbols."

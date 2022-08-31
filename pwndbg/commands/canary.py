@@ -1,22 +1,22 @@
-import pwndbg.auxv
 import pwndbg.commands
 import pwndbg.commands.telescope
-import pwndbg.memory
-import pwndbg.regs
-import pwndbg.search
+import pwndbg.gdb.auxv
+import pwndbg.gdb.memory
+import pwndbg.gdb.regs
+import pwndbg.gdb.search
 from pwndbg.color import message
 
 
 def canary_value():
-    auxv = pwndbg.auxv.get()
+    auxv = pwndbg.gdb.auxv.get()
     at_random = auxv.get("AT_RANDOM", None)
     if at_random is None:
         return None, None
 
-    global_canary = pwndbg.memory.pvoid(at_random)
+    global_canary = pwndbg.gdb.memory.pvoid(at_random)
 
     # masking canary value as canaries on the stack has last byte = 0
-    global_canary &= pwndbg.arch.ptrmask ^ 0xFF
+    global_canary &= pwndbg.gdb.arch.ptrmask ^ 0xFF
 
     return global_canary, at_random
 
@@ -36,7 +36,7 @@ def canary():
     print(message.notice("Canary    = 0x%x (may be incorrect on != glibc)" % global_canary))
 
     stack_canaries = list(
-        pwndbg.search.search(pwndbg.arch.pack(global_canary), mappings=pwndbg.stack.stacks.values())
+        pwndbg.gdb.search.search(pwndbg.gdb.arch.pack(global_canary), mappings=pwndbg.gdb.stack.stacks.values())
     )
 
     if not stack_canaries:

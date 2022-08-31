@@ -1,5 +1,5 @@
-:mod:`pwndbg.dt` --- pwndbg.dt
+:mod:`pwndbg.gdb.dt` --- pwndbg.gdb.dt
 =============================================
 
-.. automodule:: pwndbg.dt
+.. automodule:: pwndbg.gdb.dt
     :members:

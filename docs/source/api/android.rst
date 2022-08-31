@@ -1,5 +1,5 @@
-:mod:`pwndbg.android` --- pwndbg.android
+:mod:`pwndbg.gdb.android` --- pwndbg.gdb.android
 =============================================
 
-.. automodule:: pwndbg.android
+.. automodule:: pwndbg.gdb.android
     :members:

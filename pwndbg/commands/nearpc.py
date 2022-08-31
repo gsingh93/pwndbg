@@ -12,13 +12,12 @@ import pwndbg.color.theme
 import pwndbg.commands.comments
 import pwndbg.config
 import pwndbg.disasm
-import pwndbg.functions
+import pwndbg.gdb.regs
+import pwndbg.gdb.symbol
+import pwndbg.gdb.vmmap
 import pwndbg.ida
-import pwndbg.regs
-import pwndbg.strings
-import pwndbg.symbol
+import pwndbg.lib.functions
 import pwndbg.ui
-import pwndbg.vmmap
 from pwndbg.color import message
 
 
@@ -77,7 +76,7 @@ def nearpc(pc=None, lines=None, to_string=False, emulate=False):
     result = []
 
     if pc is not None:
-        pc = gdb.Value(pc).cast(pwndbg.typeinfo.pvoid)
+        pc = gdb.Value(pc).cast(pwndbg.gdb.typeinfo.pvoid)
 
     # Fix the case where we only have one argument, and
     # it's a small value.
@@ -86,7 +85,7 @@ def nearpc(pc=None, lines=None, to_string=False, emulate=False):
         pc = None
 
     if pc is None:
-        pc = pwndbg.regs.pc
+        pc = pwndbg.gdb.regs.pc
 
     if lines is None:
         lines = nearpc_lines // 2
@@ -95,7 +94,7 @@ def nearpc(pc=None, lines=None, to_string=False, emulate=False):
     lines = int(lines)
 
     # Check whether we can even read this address
-    if not pwndbg.memory.peek(pc):
+    if not pwndbg.gdb.memory.peek(pc):
         result.append(message.error("Invalid address %#x" % pc))
 
     # # Load source data if it's available
@@ -115,15 +114,15 @@ def nearpc(pc=None, lines=None, to_string=False, emulate=False):
     #             pc_to_linenos[line.pc].append(line.line)
     instructions = pwndbg.disasm.near(pc, lines, emulate=emulate, show_prev_insns=not nearpc.repeat)
 
-    if pwndbg.memory.peek(pc) and not instructions:
+    if pwndbg.gdb.memory.peek(pc) and not instructions:
         result.append(message.error("Invalid instructions at %#x" % pc))
 
     # In case $pc is in a new map we don't know about,
     # this will trigger an exploratory search.
-    pwndbg.vmmap.find(pc)
+    pwndbg.gdb.vmmap.find(pc)
 
     # Gather all addresses and symbols for each instruction
-    symbols = [pwndbg.symbol.get(i.address) for i in instructions]
+    symbols = [pwndbg.gdb.symbol.get(i.address) for i in instructions]
     addresses = ["%#x" % i.address for i in instructions]
 
     nearpc.next_pc = instructions[-1].address + instructions[-1].size if instructions else 0
@@ -188,7 +187,7 @@ def nearpc(pc=None, lines=None, to_string=False, emulate=False):
         # For Comment Function
         try:
             line += " " * 10 + C.comment(
-                pwndbg.commands.comments.file_lists[pwndbg.proc.exe][hex(instr.address)]
+                pwndbg.commands.comments.file_lists[pwndbg.gdb.proc.exe][hex(instr.address)]
             )
         except Exception:
             pass

@@ -7,7 +7,7 @@ from pwndbg.color import message
 @pwndbg.commands.ArgparsedCommand("Prints the section mappings contained in the ELF header.")
 @pwndbg.commands.OnlyWithFile
 def elfheader():
-    local_path = pwndbg.file.get_file(pwndbg.proc.exe)
+    local_path = pwndbg.file.get_file(pwndbg.gdb.proc.exe)
 
     with open(local_path, "rb") as f:
         elffile = ELFFile(f)
@@ -41,7 +41,7 @@ def plt():
 
 
 def get_section_bounds(section_name):
-    local_path = pwndbg.file.get_file(pwndbg.proc.exe)
+    local_path = pwndbg.file.get_file(pwndbg.gdb.proc.exe)
 
     with open(local_path, "rb") as f:
         elffile = ELFFile(f)
@@ -74,10 +74,10 @@ def print_symbols_in_section(section_name, filter_text=""):
 
 def get_symbols_in_region(start, end, filter_text=""):
     symbols = []
-    ptr_size = pwndbg.typeinfo.pvoid.sizeof
+    ptr_size = pwndbg.gdb.typeinfo.pvoid.sizeof
     addr = start
     while addr < end:
-        name = pwndbg.symbol.get(addr)
+        name = pwndbg.gdb.symbol.get(addr)
         if name != "" and "+" not in name and filter_text in name:
             symbols.append((name, addr))
         addr += ptr_size

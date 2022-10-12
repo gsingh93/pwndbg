@@ -26,7 +26,7 @@ config_separator = theme.ColoredParameter(
 config_highlight_group_lsb = theme.Parameter(
     "hexdump-highlight-group-lsb",
     "underline",
-    "highlight LSB of each group. Applies only if hexdump-adjust-group-endianess"
+    "highlight LSB of each group. Applies only if hexdump-use-big-endian"
     " actually changes byte order.",
 )
 

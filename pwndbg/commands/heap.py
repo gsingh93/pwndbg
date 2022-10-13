@@ -631,7 +631,7 @@ def vis_heap_chunks(addr=None, count=None, naive=None, display_all=None):
     heap_region = allocator.get_heap_boundaries(addr)
     arena = allocator.get_arena_for_chunk(addr) if addr else allocator.get_arena()
 
-    top_chunk = arena["top"]
+    top_chunk = int(arena["top"])
     ptr_size = allocator.size_sz
 
     # Build a list of addresses that delimit each chunk.
@@ -655,6 +655,26 @@ def vis_heap_chunks(addr=None, count=None, naive=None, display_all=None):
         )
         if first_chunk_size == 0:
             cursor += ptr_size * 2
+
+    size = top_chunk - cursor
+    mem = pwndbg.gdblib.memory.read(cursor, size)
+
+    gdb.execute("set hexdump-ascii-block-separator", to_string=True)
+    gdb.execute("set hexdump-byte-separator", to_string=True)
+
+    gdb.execute("set hexdump-colorize-ascii off", to_string=True)
+    gdb.execute("set hexdump-normal-color none", to_string=True)
+    gdb.execute("set hexdump-printable-color none", to_string=True)
+    gdb.execute("set hexdump-zero-color none", to_string=True)
+    gdb.execute("set hexdump-special-color none", to_string=True)
+    gdb.execute("set hexdump-highlight-group-lsb none", to_string=True)
+    print(
+        "\n".join(
+            pwndbg.hexdump.hexdump(mem, address=cursor, group_width=8, flip_group_endianess=True)
+        )
+    )
+
+    return
 
     cursor_backup = cursor
 

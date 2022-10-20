@@ -31,44 +31,25 @@ def heap_for_ptr(ptr):
     return ptr & ~(HEAP_MAX_SIZE - 1)
 
 
-class Chunk:
-    __slots__ = (
-        "_gdbValue",
-        "address",
-        "_prev_size",
-        "_size",
-        "_real_size",
-        "_flags",
-        "_non_main_arena",
-        "_is_mmapped",
-        "_prev_inuse",
-        "_fd",
-        "_bk",
-        "_fd_nextsize",
-        "_bk_nextsize",
-        "_arena",
-        "_is_top_chunk",
-    )
+def lazyproperty(func):
+    values = {}
 
+    def wrapper(self):
+        if self not in values:
+            values[self] = func(self)
+        return values[self]
+
+    wrapper.__name__ = func.__name__
+    return property(wrapper)
+
+
+class Chunk:
     def __init__(self, addr, arena=None):
         if isinstance(pwndbg.heap.current.malloc_chunk, gdb.Type):
             self._gdbValue = pwndbg.gdblib.memory.poi(pwndbg.heap.current.malloc_chunk, addr)
         else:
             self._gdbValue = pwndbg.heap.current.malloc_chunk(addr)
         self.address = int(self._gdbValue.address)
-        self._prev_size = None
-        self._size = None
-        self._real_size = None
-        self._flags = None
-        self._non_main_arena = None
-        self._is_mmapped = None
-        self._prev_inuse = None
-        self._fd = None
-        self._bk = None
-        self._fd_nextsize = None
-        self._bk_nextsize = None
-        self._arena = arena
-        self._is_top_chunk = None
 
     # Some chunk fields were renamed in GLIBC 2.25 master branch.
     def __match_renamed_field(self, field):
@@ -83,143 +64,104 @@ class Chunk:
 
         raise ValueError(f"Chunk field name did not match any of {field_renames[field]}.")
 
-    @property
+    @lazyproperty
     def prev_size(self):
-        if self._prev_size is None:
-            try:
-                self._prev_size = int(self._gdbValue[self.__match_renamed_field("prev_size")])
-            except gdb.MemoryError:
-                pass
+        try:
+            return int(self._gdbValue[self.__match_renamed_field("prev_size")])
+        except gdb.MemoryError:
+            pass
 
-        return self._prev_size
-
-    @property
+    @lazyproperty
     def size(self):
-        if self._size is None:
-            try:
-                self._size = int(self._gdbValue[self.__match_renamed_field("size")])
-            except gdb.MemoryError:
-                pass
+        try:
+            return int(self._gdbValue[self.__match_renamed_field("size")])
+        except gdb.MemoryError:
+            pass
 
-        return self._size
-
-    @property
+    @lazyproperty
     def real_size(self):
-        if self._real_size is None:
-            try:
-                self._real_size = int(
-                    self._gdbValue[self.__match_renamed_field("size")]
-                    & ~(ptmalloc.NON_MAIN_ARENA | ptmalloc.IS_MMAPPED | ptmalloc.PREV_INUSE)
-                )
-            except gdb.MemoryError:
-                pass
+        try:
+            return int(
+                self._gdbValue[self.__match_renamed_field("size")]
+                & ~(ptmalloc.NON_MAIN_ARENA | ptmalloc.IS_MMAPPED | ptmalloc.PREV_INUSE)
+            )
+        except gdb.MemoryError:
+            pass
 
-        return self._real_size
-
-    @property
+    @lazyproperty
     def flags(self):
-        if self._flags is None:
-            if self.size is not None:
-                self._flags = {
-                    "non_main_arena": self.non_main_arena,
-                    "is_mmapped": self.is_mmapped,
-                    "prev_inuse": self.prev_inuse,
-                }
+        if self.size is not None:
+            return {
+                "non_main_arena": self.non_main_arena,
+                "is_mmapped": self.is_mmapped,
+                "prev_inuse": self.prev_inuse,
+            }
 
-        return self._flags
-
-    @property
+    @lazyproperty
     def non_main_arena(self):
-        if self._non_main_arena is None:
-            sz = self.size
-            if sz is not None:
-                self._non_main_arena = bool(sz & ptmalloc.NON_MAIN_ARENA)
+        sz = self.size
+        if sz is not None:
+            return bool(sz & ptmalloc.NON_MAIN_ARENA)
 
-        return self._non_main_arena
-
-    @property
+    @lazyproperty
     def is_mmapped(self):
-        if self._is_mmapped is None:
-            sz = self.size
-            if sz is not None:
-                self._is_mmapped = bool(sz & ptmalloc.IS_MMAPPED)
+        sz = self.size
+        if sz is not None:
+            return bool(sz & ptmalloc.IS_MMAPPED)
 
-        return self._is_mmapped
-
-    @property
+    @lazyproperty
     def prev_inuse(self):
-        if self._prev_inuse is None:
-            sz = self.size
-            if sz is not None:
-                self._prev_inuse = bool(sz & ptmalloc.PREV_INUSE)
+        sz = self.size
+        if sz is not None:
+            return bool(sz & ptmalloc.PREV_INUSE)
 
-        return self._prev_inuse
-
-    @property
+    @lazyproperty
     def fd(self):
-        if self._fd is None:
-            try:
-                self._fd = int(self._gdbValue["fd"])
-            except gdb.MemoryError:
-                pass
+        try:
+            return int(self._gdbValue["fd"])
+        except gdb.MemoryError:
+            pass
 
-        return self._fd
-
-    @property
+    @lazyproperty
     def bk(self):
-        if self._bk is None:
-            try:
-                self._bk = int(self._gdbValue["bk"])
-            except gdb.MemoryError:
-                pass
+        try:
+            return int(self._gdbValue["bk"])
+        except gdb.MemoryError:
+            pass
 
-        return self._bk
-
-    @property
+    @lazyproperty
     def fd_nextsize(self):
-        if self._fd_nextsize is None:
-            try:
-                self._fd_nextsize = int(self._gdbValue["fd_nextsize"])
-            except gdb.MemoryError:
-                pass
+        try:
+            return int(self._gdbValue["fd_nextsize"])
+        except gdb.MemoryError:
+            pass
 
-        return self._fd_nextsize
-
-    @property
+    @lazyproperty
     def bk_nextsize(self):
-        if self._bk_nextsize is None:
-            try:
-                self._bk_nextsize = int(self._gdbValue["bk_nextsize"])
-            except gdb.MemoryError:
-                pass
+        try:
+            return int(self._gdbValue["bk_nextsize"])
+        except gdb.MemoryError:
+            pass
 
-        return self._bk_nextsize
-
-    @property
+    @lazyproperty
     def arena(self):
-        if self._arena is None:
-            try:
-                ar_ptr = pwndbg.heap.current.get_heap(self.address)["ar_ptr"]
-                ar_ptr.fetch_lazy()
-            except Exception:
-                ar_ptr = None
-            if ar_ptr is not None and ar_ptr in (ar.address for ar in pwndbg.heap.current.arenas):
-                self._arena = Arena(ar_ptr)
-            else:
-                self._arena = Arena(pwndbg.heap.current.main_arena.address)
+        try:
+            ar_ptr = pwndbg.heap.current.get_heap(self.address)["ar_ptr"]
+            ar_ptr.fetch_lazy()
+        except Exception:
+            ar_ptr = None
+        if ar_ptr is not None and ar_ptr in (ar.address for ar in pwndbg.heap.current.arenas):
+            return Arena(ar_ptr)
+        else:
+            return Arena(pwndbg.heap.current.main_arena.address)
 
-        return self._arena
-
-    @property
+    @lazyproperty
     def is_top_chunk(self):
-        if self._is_top_chunk is None:
-            ar = self.arena
-            if ar is not None and self.address == ar.top:
-                self._is_top_chunk = True
-            else:
-                self._is_top_chunk = False
-
-        return self._is_top_chunk
+        ar = self.arena
+        if ar is not None and self.address == ar.top:
+            return True
+        else:
+            return False
 
 
 class Arena:

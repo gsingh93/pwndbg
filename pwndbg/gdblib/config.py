@@ -43,32 +43,45 @@ class Parameter(gdb.Parameter):
         else:
             super().__init__(param.name, gdb.COMMAND_SUPPORT, param.param_class)
         self.param = param
-        self.value = param.value
+        self.value = "" if param.is_deprecated() else param.value
+        self._already_warned = False
 
     @property
     def native_value(self):
-        return Parameter._value_to_gdb_native(self.param.value, param_class=self.param.param_class)
+        param = self._get_replacement_param()
+        return Parameter._value_to_gdb_native(param.value, param_class=param.param_class)
 
     @property
     def native_default(self):
-        return Parameter._value_to_gdb_native(
-            self.param.default, param_class=self.param.param_class
-        )
+        param = self._get_replacement_param()
+        return Parameter._value_to_gdb_native(param.default, param_class=param.param_class)
+
+    def _get_replacement_param(self):
+        if self.param.is_deprecated():
+            new_name = self.param.get_replacement()
+            if self._already_warned is False:
+                self._print_deprecation_warning(self.param.name, new_name)
+                self._already_warned = True
+            return getattr(config, new_name.replace("-", "_"))
+        else:
+            return self.param
 
     def get_set_string(self):
         """Handles the GDB `set <param>` command"""
 
+        param = self._get_replacement_param()
+
         # GDB will set `self.value` to the user's input
-        if self.value is None and self.param.param_class in (gdb.PARAM_UINTEGER, gdb.PARAM_INTEGER):
+        if self.value is None and param.param_class in (gdb.PARAM_UINTEGER, gdb.PARAM_INTEGER):
             # Note: This is really weird, according to GDB docs, 0 should mean "unlimited" for gdb.PARAM_UINTEGER and gdb.PARAM_INTEGER, but somehow GDB sets the value to `None` actually :/
             # And hilarious thing is that GDB won't let you set the default value to `None` when you construct the `gdb.Parameter` object with `gdb.PARAM_UINTEGER` or `gdb.PARAM_INTEGER` lol
             # Maybe it's a bug of GDB?
-            # Anyway, to avoid some unexpected behaviors, we'll still set `self.param.value` to 0 here.
-            self.param.value = 0
+            # Anyway, to avoid some unexpected behaviors, we'll still set `param.value` to 0 here.
+            param.value = 0
         else:
-            self.param.value = self.value
+            param.value = self.value
 
-        for trigger in config.triggers[self.param.name]:
+        for trigger in config.triggers[param.name]:
             trigger()
 
         # No need to print anything if this is set before we get to a prompt,
@@ -76,14 +89,16 @@ class Parameter(gdb.Parameter):
         if not pwndbg.decorators.first_prompt:
             return ""
 
-        return "Set %s to %r." % (self.param.set_show_doc, self.native_value)
+        return "Set %s to %r." % (param.set_show_doc, self.native_value)
 
-    def get_show_string(self, svalue):
+    def get_show_string(self, _svalue):
         """Handles the GDB `show <param>` command"""
-        more_information_hint = " See `help set %s` for more information." % self.param.name
+        param = self._get_replacement_param()
+
+        more_information_hint = " See `help set %s` for more information." % param.name
         return "%s is %r.%s" % (
-            self.param.set_show_doc.capitalize(),
-            svalue,
+            param.set_show_doc.capitalize(),
+            Parameter._value_to_gdb_native(param.value, param.param_class),
             more_information_hint if self.__doc__ else "",
         )
 

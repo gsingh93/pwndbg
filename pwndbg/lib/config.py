@@ -29,6 +29,7 @@ class Parameter:
         help_docstring="",
         param_class=None,
         enum_sequence=None,
+        deprecated_by=None,
         scope="config",
     ):
         # Note: `set_show_doc` should be a noun phrase, e.g. "the value of the foo"
@@ -43,6 +44,7 @@ class Parameter:
         self.value = default
         self.param_class = param_class or PARAM_CLASSES[type(default)]
         self.enum_sequence = enum_sequence
+        self.deprecated_by = deprecated_by
         self.scope = scope
 
     @property
@@ -56,6 +58,13 @@ class Parameter:
         """Returns the attribute name associated with this config option,
         i.e. `my-config` has the attribute name `my_config`"""
         return self.name.replace("-", "_")
+
+    def is_deprecated(self):
+        return self.deprecated_by is not None
+
+    def get_replacement(self):
+        assert self.is_deprecated()
+        return self.deprecated_by
 
     def __getattr__(self, name):
         return getattr(self.value, name)
@@ -126,6 +135,7 @@ class Parameter:
 class Config:
     def __init__(self):
         self.params = {}
+        self.deprecated_params = {}
         self.triggers = collections.defaultdict(lambda: [])
 
     def add_param(
@@ -137,6 +147,7 @@ class Config:
         help_docstring="",
         param_class=None,
         enum_sequence=None,
+        deprecated_by=None,
         scope="config",
     ):
         # Dictionary keys are going to have underscores, so we can't allow them here
@@ -149,9 +160,19 @@ class Config:
             help_docstring=help_docstring,
             param_class=param_class,
             enum_sequence=enum_sequence,
+            deprecated_by=deprecated_by,
             scope=scope,
         )
         return self.add_param_obj(p)
+
+    def add_deprecated_param(self, old_name: str, new_name: str, scope="config"):
+        self.add_param(
+            old_name,
+            "",
+            f"deprecated, use '{new_name}' instead",
+            deprecated_by=new_name,
+            scope=scope,
+        )
 
     def add_param_obj(self, p: Parameter):
         attr_name = p.attr_name()
@@ -175,8 +196,26 @@ class Config:
     def get_params(self, scope) -> List[Parameter]:
         return sorted(filter(lambda p: p.scope == scope, self.params.values()))
 
+    def _print_deprecation_warning(self, old_name: str, new_name: str):
+        # We need to import this here to avoid a circular import warning
+        import pwndbg.color.message as message
+
+        print(
+            message.warn(
+                f"The config option '{old_name}' is deprecated and will be removed in the future. Please update your configuration to use '{new_name}' instead."
+            )
+        )
+
     def __getattr__(self, name):
         if name in self.params:
-            return self.params[name]
+            p = self.params[name]
+            # Unlike in pwndbg.gdblib.config, we don't limit this to printing
+            # just once. If this method is called, that means we're accessing a
+            # deprecated parameter from our own code, not a configuration file,
+            # and we should fix this
+            if p.is_deprecated():
+                self._print_deprecation_warning()
+
+            return p
         else:
             raise AttributeError("'Config' object has no attribute '%s'" % name)

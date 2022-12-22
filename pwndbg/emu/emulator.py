@@ -9,6 +9,7 @@ import capstone as C
 import gdb
 import unicorn as U
 
+from pwndbg.lib.arch import Endianness
 import pwndbg.disasm
 import pwndbg.emu.emulator
 import pwndbg.gdblib.arch
@@ -205,7 +206,7 @@ class Emulator:
         else:
             mode |= {4: U.UC_MODE_32, 8: U.UC_MODE_64}[pwndbg.gdblib.arch.ptrsize]
 
-        if pwndbg.gdblib.arch.endian == "little":
+        if pwndbg.gdblib.arch.endian == Endianness.LITTLE:
             mode |= U.UC_MODE_LITTLE_ENDIAN
         else:
             mode |= U.UC_MODE_BIG_ENDIAN

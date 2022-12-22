@@ -10,6 +10,8 @@ import pwndbg.gdblib.regs
 import pwndbg.hexdump
 from pwndbg.color import message
 
+from pwndbg.lib.arch import Endianness
+
 pwndbg.gdblib.config.add_param("hexdump-width", 16, "line width of hexdump command")
 pwndbg.gdblib.config.add_param("hexdump-bytes", 64, "number of bytes printed by hexdump command")
 pwndbg.gdblib.config.add_param(
@@ -84,7 +86,7 @@ def hexdump(address, count=pwndbg.gdblib.config.hexdump_bytes):
 
     # TODO: What if arch endian is big, and use_big_endian is false?
     flip_group_endianess = (
-        pwndbg.gdblib.config.hexdump_group_use_big_endian and pwndbg.gdblib.arch.endian == "little"
+        pwndbg.gdblib.config.hexdump_group_use_big_endian and pwndbg.gdblib.arch.endian == Endianness.LITTLE
     )
 
     # The user may have input the start and end range to dump instead of the

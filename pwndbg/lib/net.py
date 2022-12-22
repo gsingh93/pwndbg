@@ -6,6 +6,7 @@ remote debugging sessions.
 import binascii
 import socket
 
+from pwndbg.lib.arch import Endianness
 import pwndbg.gdblib.arch
 import pwndbg.gdblib.file
 
@@ -122,7 +123,7 @@ def tcp(data: str):
             host, port = hostport.split(":")
             host = binascii.unhexlify(host)
 
-            if pwndbg.gdblib.arch.endian == "little":
+            if pwndbg.gdblib.arch.endian == Endianness.LITTLE:
                 host = host[::-1]
 
             host = socket.inet_ntop(socket.AF_INET, host)

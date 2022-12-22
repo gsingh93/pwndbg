@@ -11,6 +11,7 @@ Structure type, and incurring a performance penalty for foreign-endianness targe
 import ctypes
 import sys
 
+from pwndbg.lib.arch import Endianness
 import pwndbg.gdblib.arch
 import pwndbg.gdblib.events
 
@@ -23,7 +24,7 @@ Structure = ctypes.LittleEndianStructure  # default Structure type
 def update():
     global module
 
-    if pwndbg.gdblib.arch.endian == "little":
+    if pwndbg.gdblib.arch.endian == Endianness.LITTLE:
         Structure = ctypes.LittleEndianStructure
     else:
         Structure = ctypes.BigEndianStructure

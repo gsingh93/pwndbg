@@ -5,6 +5,8 @@ import os
 import struct
 from typing import Set
 
+from pwndbg.lib.arch import Endianness
+
 import pwndbg.color.memory as M
 import pwndbg.commands
 import pwndbg.enhance
@@ -157,7 +159,7 @@ def search(type, hex, executable, writable, value, mapping_name, save, next, tru
     if type not in ("string", "bytes"):
         value = pwndbg.commands.fix_int(value)
         value &= pwndbg.gdblib.arch.ptrmask
-        fmt = {"little": "<", "big": ">"}[pwndbg.gdblib.arch.endian] + {
+        fmt = {Endianness.LITTLE: "<", Endianness.BIG: ">"}[pwndbg.gdblib.arch.endian] + {
             "byte": "B",
             "short": "H",
             "word": "H",

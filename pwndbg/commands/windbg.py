@@ -9,6 +9,8 @@ from itertools import chain
 
 import gdb
 
+from pwndbg.lib.arch import Endianness
+
 import pwndbg.commands
 import pwndbg.gdblib.arch
 import pwndbg.gdblib.memory
@@ -284,7 +286,7 @@ def eX(size, address, data, hex=True):
         else:
             data = string
 
-        if pwndbg.gdblib.arch.endian == "little":
+        if pwndbg.gdblib.arch.endian == Endianness.LITTLE:
             data = data[::-1]
 
         try:

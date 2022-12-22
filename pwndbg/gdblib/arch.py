@@ -1,36 +1,38 @@
 import gdb
 import pwnlib
 
+
 import pwndbg.gdblib.proc
 from pwndbg.gdblib import typeinfo
-from pwndbg.lib.arch import Arch
+from pwndbg.lib.arch import Arch, Architecture, Endianness
 
 # TODO: x86-64 needs to come before i386 in the current implementation, make
 # this order-independent
 ARCHS = ("x86-64", "i386", "aarch64", "mips", "powerpc", "sparc", "arm")
 
-# mapping between gdb and pwntools arch names
+# mapping between pwndbg and pwntools arch names
 pwnlib_archs_mapping = {
-    "x86-64": "amd64",
-    "i386": "i386",
-    "aarch64": "aarch64",
-    "mips": "mips",
-    "powerpc": "powerpc",
-    "sparc": "sparc",
-    "arm": "arm",
-    "armcm": "thumb",
+    Architecture.I386: "i386",
+    Architecture.X86_64: "amd64",
+    Architecture.ARM: "arm",
+    Architecture.ARMCM: "thumb",
+    Architecture.AARCH64: "aarch64",
+    Architecture.MIPS: "mips",
+    Architecture.POWERPC: "powerpc",
+    Architecture.SPARC: "sparc",
 }
 
-arch = Arch("i386", typeinfo.ptrsize, "little")
+
+arch = Arch(Architecture.I386, typeinfo.ptrsize, Endianness.LITTLE)
 
 
 def _get_arch(ptrsize):
     not_exactly_arch = False
 
     if "little" in gdb.execute("show endian", to_string=True).lower():
-        endian = "little"
+        endian = Endianness.LITTLE
     else:
-        endian = "big"
+        endian = Endianness.BIG
 
     if pwndbg.gdblib.proc.alive:
         arch = gdb.newest_frame().architecture().name()
@@ -42,8 +44,8 @@ def _get_arch(ptrsize):
     for match in ARCHS:
         if match in arch:
             # Distinguish between Cortex-M and other ARM
-            if match == "arm" and "-m" in arch:
-                match = "armcm"
+            if match == Architecture.ARM and "-m" in arch:
+                match = Architecture.ARMCM
             return match, ptrsize, endian
 
     if not_exactly_arch:

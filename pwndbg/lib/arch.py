@@ -1,6 +1,22 @@
 import struct
 import sys
 
+from enum import Enum
+
+
+class Architecture(str, Enum):
+    X86_64 = "x86-64"
+    I386 = "i386"
+    AARCH64 = "aarch64"
+    MIPS = "mips"
+    POWERPC = "powerpc"
+    SPARC = "sparc"
+    ARM = "arm"
+    ARMCM = "armcm"
+
+class Endianness(str, Enum):
+    LITTLE = "little"
+    BIG = "big"
 
 class Arch:
     def __init__(self, arch_name: str, ptrsize: int, endian: str) -> None:
@@ -17,9 +33,9 @@ class Arch:
             (self.ptrsize, self.endian)
         ]  # type: str
 
-        if self.name == "arm" and self.endian == "big":
+        if self.name == Architecture.ARM and self.endian == Endianness.BIG:
             self.qemu = "armeb"
-        elif self.name == "mips" and self.name == "little":
+        elif self.name == Architecture.MIPS and self.endian == Endianness.LITTLE:
             self.qemu = "mipsel"
         else:
             self.qemu = self.name

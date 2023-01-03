@@ -19,6 +19,7 @@ from capstone import *  # noqa: F403
 import pwndbg.disasm.arch
 import pwndbg.gdblib.arch
 import pwndbg.gdblib.memory
+import pwndbg.gdblib.show
 import pwndbg.gdblib.symbol
 import pwndbg.ida
 import pwndbg.lib.cache
@@ -80,16 +81,9 @@ def get_disassembler_cached(arch, ptrsize: int, endian, extra=None):
 
     mode |= CapstoneEndian[endian]
 
-    try:
-        flavor = gdb.execute("show disassembly-flavor", to_string=True).lower().split('"')[1]
-    except gdb.error as e:
-        if str(e).find("disassembly-flavor") > -1:
-            flavor = "intel"
-        else:
-            raise
-
     cs = Cs(arch, mode)
     try:
+        flavor = pwndbg.gdblib.show.disassembly_flavor()
         cs.syntax = CapstoneSyntax[flavor]
     except CsError as ex:
         pass

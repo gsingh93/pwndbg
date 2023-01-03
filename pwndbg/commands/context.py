@@ -26,6 +26,7 @@ import pwndbg.gdblib.events
 import pwndbg.gdblib.heap_tracking
 import pwndbg.gdblib.nearpc
 import pwndbg.gdblib.regs
+import pwndbg.gdblib.show
 import pwndbg.gdblib.symbol
 import pwndbg.gdblib.vmmap
 import pwndbg.ghidra
@@ -623,14 +624,7 @@ code_lines = pwndbg.gdblib.config.add_param(
 
 
 def context_disasm(target=sys.stdout, with_banner=True, width=None):
-    try:
-        flavor = gdb.execute("show disassembly-flavor", to_string=True).lower().split('"')[1]
-    except gdb.error as e:
-        if str(e).find("disassembly-flavor") > -1:
-            flavor = "intel"
-        else:
-            raise
-
+    flavor = pwndbg.gdblib.show.disassembly_flavor()
     syntax = pwndbg.disasm.CapstoneSyntax[flavor]
 
     # Get the Capstone object to set disassembly syntax

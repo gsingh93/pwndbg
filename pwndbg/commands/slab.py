@@ -165,7 +165,7 @@ def print_cpu_cache(cpu_cache, offset, random, cpu_partial, indent, verbose) -> 
         indent.print(f"{C.blue('Freelist')}:", _yx(int(freelist)))
 
         # TODO: Is the `if page:` a null pointer check or something else?
-        page = cpu_cache["page"]
+        page = cpu_cache["slab"]
         if page:
             indent.print(f"{C.green('Active Slab')}:")
             with indent:
@@ -184,7 +184,7 @@ def print_cpu_cache(cpu_cache, offset, random, cpu_partial, indent, verbose) -> 
         slab = cpu_cache["partial"]
         if slab:
             indent.print(
-                f"{C.green('Partial Slabs')} [{slab['pages']}] [PO: {slab['pobjects']}/{cpu_partial}]:"
+                f"{C.green('Partial Slabs')}"  # [{slab['pages']}] [PO: {slab['pobjects']}/{cpu_partial}]:"
             )
             while slab:
                 page = slab.dereference()

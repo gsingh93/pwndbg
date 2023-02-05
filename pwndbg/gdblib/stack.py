@@ -16,6 +16,7 @@ import pwndbg.gdblib.elf
 import pwndbg.gdblib.events
 import pwndbg.gdblib.memory
 import pwndbg.lib.memoize
+from pwndbg import gdblib
 
 # Dictionary of stack ranges.
 # Key is the gdb thread ptid
@@ -45,13 +46,13 @@ def find_upper_stack_boundary(stack_ptr: int, max_pages: int = 1024) -> int:
 
     # We can't get the stack size from stack layout and page fault on bare metal mode,
     # so we return current page as a walkaround.
-    if not pwndbg.gdblib.abi.linux:
-        return stack_ptr + pwndbg.gdblib.memory.PAGE_SIZE
+    if not gdblib.abi.linux:
+        return stack_ptr + gdblib.memory.PAGE_SIZE
 
-    return pwndbg.gdblib.memory.find_upper_boundary(stack_ptr, max_pages)
+    return gdblib.memory.find_upper_boundary(stack_ptr, max_pages)
 
 
-@pwndbg.gdblib.events.stop
+@gdblib.events.stop
 @pwndbg.lib.memoize.reset_on_stop
 def update() -> None:
     """
@@ -62,7 +63,7 @@ def update() -> None:
     try:
         for thread in gdb.selected_inferior().threads():
             thread.switch()
-            sp = pwndbg.gdblib.regs.sp
+            sp = gdblib.regs.sp
 
             # Skip if sp is None or 0
             # (it might be 0 if we debug a qemu kernel)
@@ -106,10 +107,10 @@ def current():
     """
     Returns the bounds for the stack for the current thread.
     """
-    return find(pwndbg.gdblib.regs.sp)
+    return find(gdblib.regs.sp)
 
 
-@pwndbg.gdblib.events.exit
+@gdblib.events.exit
 def clear() -> None:
     """
     Clears everything we know about any stack memory ranges.
@@ -121,16 +122,16 @@ def clear() -> None:
     nx = False
 
 
-@pwndbg.gdblib.events.stop
+@gdblib.events.stop
 @pwndbg.lib.memoize.reset_on_exit
 def is_executable() -> bool:
     global nx
     nx = False
 
     PT_GNU_STACK = 0x6474E551
-    ehdr = pwndbg.gdblib.elf.exe()
+    ehdr = gdblib.elf.exe()
 
-    for phdr in pwndbg.gdblib.elf.iter_phdrs(ehdr):
+    for phdr in gdblib.elf.iter_phdrs(ehdr):
         if phdr.p_type == PT_GNU_STACK:
             nx = True
 

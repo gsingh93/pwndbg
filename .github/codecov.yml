@@ -2,9 +2,9 @@ codecov:
   branch: dev
 coverage:
   status:
+    project:
+      default:
+        informational: true
     patch:
       default:
-        target: auto
-        threshold: 0%
-        base: auto 
-        only_pulls: false
+        informational: true

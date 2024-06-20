@@ -10,6 +10,7 @@ REFERENCE_BINARY = tests.binaries.get("reference-binary.out")
 
 
 def test_callstack_readable(start_binary):
+    assert False
     start_binary(REFERENCE_BINARY)
     gdb.execute("b break_here")
     gdb.execute("r")

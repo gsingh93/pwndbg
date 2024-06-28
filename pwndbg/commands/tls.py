@@ -43,7 +43,7 @@ def tls(pthread_self=False) -> None:
         print(message.success("TLS is located at:"))
         print(message.notice(pwndbg.gdblib.vmmap.find(tls_base)))
         return
-    print(message.error("Couldn't find Thread Local Storage (TLS) base."))
+    log.error("Couldn't find Thread Local Storage (TLS) base.")
     if not pthread_self:
         print(
             message.notice(

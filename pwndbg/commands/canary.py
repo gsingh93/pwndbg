@@ -42,7 +42,7 @@ def canary(all) -> None:
     global_canary, at_random = canary_value()
 
     if global_canary is None or at_random is None:
-        print(message.error("Couldn't find AT_RANDOM - can't display canary."))
+        log.error("Couldn't find AT_RANDOM - can't display canary.")
         return
 
     print(
@@ -85,7 +85,7 @@ def canary(all) -> None:
             pwndbg.commands.telescope.telescope(address=stack_canary, count=1)
 
     if found_canaries is False:
-        print(message.warn("No canaries found."))
+        log.warning("No canaries found.")
 
     if some_canaries_not_shown is True:
-        print(message.warn("Additional results hidden. Use --all to see them."))
+        log.warning("Additional results hidden. Use --all to see them.")

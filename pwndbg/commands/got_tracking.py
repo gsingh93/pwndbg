@@ -124,7 +124,7 @@ def got_report(soname=".*", writable=False, fnname=".*") -> None:
     Prints out a report of the current status of the GOT tracker.
     """
     if not pwndbg.gdblib.got.GOT_TRACKING:
-        print(message.error("GOT call tracking is not enabled"))
+        log.error("GOT call tracking is not enabled")
         return
 
     soname = re.compile(soname)
@@ -184,18 +184,18 @@ def got_tracking_status(address) -> None:
     Prints out information about a single GOT tracking entry.
     """
     if not pwndbg.gdblib.got.GOT_TRACKING:
-        print(message.error("GOT call tracking is not enabled"))
+        log.error("GOT call tracking is not enabled")
         return
 
     try:
         address = int(address, 0)
     except ValueError as e:
-        print(message.error(f"Invalid address {address}: {e}"))
+        log.error(f"Invalid address {address}: {e}")
         return
 
     result = pwndbg.gdblib.got.tracked_entry_by_address(address)
     if result is None:
-        print(message.error(f"No entry at address {address:#x}"))
+        log.error(f"No entry at address {address:#x}")
         print("Hint: This command expects the address of the entry in the GOT. So, consider")
         print("using the address from the 'Address in GOT' column of the `track-got info`")
         print("command.")

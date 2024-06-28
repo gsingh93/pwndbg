@@ -58,7 +58,7 @@ input_group.add_argument("-i", "--infile", default=None, type=str, help="Specify
 @pwndbg.commands.ArgparsedCommand(parser, command_name="asm")
 def asm(shellcode, format, arch, avoid, infile) -> None:
     if infile:
-        print(message.warn("Going to read from file: " + infile))
+        log.warning("Going to read from file: " + infile)
         with open(infile) as file:
             shellcode = [file.read()]
 
@@ -71,7 +71,7 @@ def asm(shellcode, format, arch, avoid, infile) -> None:
     if avoid:
         avoid = (str(byte) for byte in avoid)
         avoid = pwnlib.unhex("".join(avoid))
-        print(message.warn("Going to avoid these bytes in hex: " + avoid.hex(" ")))
+        log.warning("Going to avoid these bytes in hex: " + avoid.hex(" "))
         assembly = pwnlib.encode(assembly, avoid)
 
     if format == "hex":

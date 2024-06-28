@@ -104,7 +104,7 @@ def got(path_filter: str, all_: bool, accept_readonly: bool, symbol_filter: str)
 
     # Maybe user have a typo or something in the path filter, show the available shared libraries
     if first_print and path_filter:
-        print(message.error("No shared library matching the path filter found."))
+        log.error("No shared library matching the path filter found.")
         if paths:
             print(message.notice("Available shared libraries:"))
             for path in paths:

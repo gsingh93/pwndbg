@@ -91,7 +91,7 @@ def init_ida_rpc_client() -> None:
             or _ida_last_exception.args != exception[1].args
         ):
             if hasattr(pwndbg.config, "exception_verbose") and pwndbg.config.exception_verbose:
-                print(message.error("[!] Ida Pro xmlrpc error"))
+                log.error("[!] Ida Pro xmlrpc error")
                 traceback.print_exception(*exception)
             else:
                 exc_type, exc_value, _ = exception

@@ -25,7 +25,7 @@ def comm(addr=None, comment=None) -> None:
             target = int(addr, 0)
 
             if not pwndbg.gdblib.memory.peek(target):
-                print(message.error("Invalid Address %#x" % target))
+                log.error("Invalid Address %#x" % target)
 
             else:
                 f.write(f"file:{pwndbg.gdblib.proc.exe}=")
@@ -34,7 +34,7 @@ def comm(addr=None, comment=None) -> None:
                     file_lists[pwndbg.gdblib.proc.exe] = {}
                 file_lists[pwndbg.gdblib.proc.exe][hex(target)] = comment
     except Exception:
-        print(message.error("Permission denied to create file"))
+        log.error("Permission denied to create file")
 
 
 def init() -> None:

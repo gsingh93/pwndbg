@@ -77,7 +77,7 @@ def OnlyWhenStructFileExists(func: _OnlyWhenStructFileExists) -> _OnlyWhenStruct
             custom_structure_path or os.path.join(pwndbg_cachedir, custom_structure_name) + ".c"
         )
         if not os.path.exists(pwndbg_custom_structure_path):
-            print(message.error("No custom structure was found with the given name!"))
+            log.error("No custom structure was found with the given name!")
             return None
         return func(custom_structure_name, pwndbg_custom_structure_path)
 
@@ -110,7 +110,7 @@ def generate_debug_symbols(
     try:
         subprocess.run(gcc_cmd, capture_output=True, check=True)
     except subprocess.CalledProcessError as exception:
-        print(message.error(exception))
+        log.error(exception)
         print(
             message.error(
                 "Failed to compile the .c file with custom structures. Please fix any compilation errors there may be."
@@ -118,8 +118,8 @@ def generate_debug_symbols(
         )
         return None
     except Exception as exception:
-        print(message.error(exception))
-        print(message.error("An error occured while generating the debug symbols."))
+        log.error(exception)
+        log.error("An error occured while generating the debug symbols.")
         return None
 
     return pwndbg_debug_symbols_output_file
@@ -171,9 +171,9 @@ def edit_custom_structure(custom_structure_name: str, custom_structure_path: str
             check=True,
         )
     except Exception:
-        print(message.error("An error occured during opening the source file."))
-        print(message.error(f"Path to the custom structure: {custom_structure_path}"))
-        print(message.error("Please try to manually edit the structure."))
+        log.error("An error occured during opening the source file.")
+        log.error(f"Path to the custom structure: {custom_structure_path}")
+        log.error("Please try to manually edit the structure.")
         print(
             message.error(
                 '\nTry to set a path to an editor with:\n\tset "cymbol-editor" /usr/bin/nano'

@@ -233,7 +233,7 @@ def break_on_program_code() -> bool:
     pc = pwndbg.gdblib.regs.pc
     for start, end in binary_exec_page_ranges:
         if start <= pc < end:
-            print(message.error("The pc is already at the binary objfile code. Not stepping."))
+            log.error("The pc is already at the binary objfile code. Not stepping.")
             return False
 
     proc = pwndbg.gdblib.proc

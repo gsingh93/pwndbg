@@ -59,6 +59,6 @@ def rzpipe(arguments) -> None:
         rz = pwndbg.rizin.rzpipe()
         print(rz.cmd(" ".join(arguments)))
     except ImportError:
-        print(message.error("Could not import rzpipe python library"))
+        log.error("Could not import rzpipe python library")
     except Exception as e:
-        print(message.error(e))
+        log.error(e)

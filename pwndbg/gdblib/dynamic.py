@@ -133,7 +133,7 @@ def r_debug_install_link_map_changed_hook() -> None:
 
     r_debug_address = _r_debug()
     if r_debug_address is None:
-        print(message.warn("symbol _r_debug is missing, cannot install link map change hook"))
+        log.warning("symbol _r_debug is missing, cannot install link map change hook")
         return
 
     r_debug = CStruct.r_debug()
@@ -170,7 +170,7 @@ def link_map_head():
     """
     r_debug_address = _r_debug()
     if r_debug_address is None:
-        print(message.warn("symbol _r_debug is missing, cannot find link map"))
+        log.warning("symbol _r_debug is missing, cannot find link map")
         return None
 
     r_debug = CStruct.r_debug()

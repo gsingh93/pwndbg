@@ -29,7 +29,7 @@ def xuntil(target) -> None:
         addr = int(target, 0)
 
         if not pwndbg.gdblib.memory.peek(addr):
-            print(message.error("Invalid address %#x" % addr))
+            log.error("Invalid address %#x" % addr)
             return
 
         spec = "*%#x" % (addr)
@@ -38,7 +38,7 @@ def xuntil(target) -> None:
         try:
             gdb.execute(f"info address {target}", to_string=True, from_tty=False)
         except gdb.error:
-            print(message.error(f"Unable to resolve {target}"))
+            log.error(f"Unable to resolve {target}")
             return
         spec = target
 

@@ -77,19 +77,19 @@ def install_breakpoint(branch, taken: bool) -> None:
         try:
             value = gdb.parse_and_eval(branch)
             if value.address is None:
-                print(message.warn(f"Value {branch} has no address, trying its value"))
+                log.warning(f"Value {branch} has no address, trying its value")
                 address = int(value)
             else:
                 address = int(value.address)
         except gdb.error as e:
             # No such luck. Report to the user and quit.
-            print(message.error(f"Could not resolve branch location {branch}: {e}"))
+            log.error(f"Could not resolve branch location {branch}: {e}")
             return
 
     # We should've picked something by now, or errored out.
     instruction = pwndbg.gdblib.disasm.one(address)
     if instruction is None:
-        print(message.error(f"Could not decode instruction at address {address:#x}"))
+        log.error(f"Could not decode instruction at address {address:#x}")
         return
     if CS_GRP_JUMP not in instruction.groups:
         print(

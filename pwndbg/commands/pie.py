@@ -95,7 +95,7 @@ def piebase(offset=None, module=None) -> None:
     if addr is not None:
         print(f"Calculated VA from {module} = 0x{addr:x}")
     else:
-        print(message.error("Could not calculate VA on current target."))
+        log.error("Could not calculate VA on current target.")
 
 
 parser = argparse.ArgumentParser()
@@ -124,4 +124,4 @@ def breakrva(offset=0, module=None) -> None:
         spec = "*%#x" % (addr)
         gdb.Breakpoint(spec)
     else:
-        print(message.error("Could not determine rebased breakpoint address on current target"))
+        log.error("Could not determine rebased breakpoint address on current target")

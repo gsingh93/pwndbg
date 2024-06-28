@@ -70,7 +70,7 @@ def print_symbols_in_section(section_name, filter_text="") -> None:
     start, end = get_section_bounds(section_name)
 
     if start is None:
-        print(message.error(f"Could not find section {section_name}"))
+        log.error(f"Could not find section {section_name}")
         return
 
     # If we started the binary and it has PIE, rebase it
@@ -87,7 +87,7 @@ def print_symbols_in_section(section_name, filter_text="") -> None:
     symbols = get_symbols_in_region(start, end, filter_text)
 
     if not symbols:
-        print(message.error(f"No symbols found in section {section_name}"))
+        log.error(f"No symbols found in section {section_name}")
 
     for symbol, addr in symbols:
         print(hex(int(addr)) + ": " + symbol)

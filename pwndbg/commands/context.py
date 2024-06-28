@@ -125,7 +125,7 @@ def validate_context_sections() -> None:
             print(
                 message.warn(f"Invalid section: {section}, valid values: {', '.join(valid_values)}")
             )
-            print(message.warn("(setting none of them like '' will make sections not appear)"))
+            log.warning("(setting none of them like '' will make sections not appear)")
             config_context_sections.revert_default()
             return
 
@@ -296,7 +296,7 @@ parser.add_argument("num", type=int, help="The expression number to be removed f
 )
 def contextunwatch(num) -> None:
     if num < 1 or num > len(expressions):
-        print(message.error("Invalid input"))
+        log.error("Invalid input")
         return
 
     expressions.pop(int(num) - 1)
@@ -580,7 +580,7 @@ def get_regs(regs: List[str] = None):
 
         value = pwndbg.gdblib.regs[reg]
         if value is None:
-            print(message.warn("Unknown register: %r" % reg))
+            log.warning("Unknown register: %r" % reg)
             continue
 
         # Make the register stand out and give a color if changed

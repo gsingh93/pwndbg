@@ -34,11 +34,11 @@ parser.add_argument(
 @pwndbg.commands.OnlyWhenRunning
 def killthreads(thread_ids: List[int] | None = None, all: bool = False) -> None:
     if len(thread_ids) == 0 and not all:
-        print(message.error("No thread IDs or --all flag specified"))
+        log.error("No thread IDs or --all flag specified")
         return
 
     if all and len(thread_ids) > 0:
-        print(message.error("Cannot specify thread IDs and --all"))
+        log.error("Cannot specify thread IDs and --all")
         return
 
     with lock_scheduler():

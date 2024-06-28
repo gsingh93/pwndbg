@@ -1532,7 +1532,7 @@ class DebugSymsHeap(GlibcMemoryAllocator[gdb.Type, gdb.Value]):
 
             return self._thread_cache
 
-        print(message.warn("This version of GLIBC was not compiled with tcache support."))
+        log.warning("This version of GLIBC was not compiled with tcache support.")
         return None
 
     @property
@@ -1818,7 +1818,7 @@ class HeuristicHeap(
             if input().lower() == "y":
                 tls_address = pwndbg.gdblib.tls.find_address_with_pthread_self()
             if not tls_address:
-                print(message.error("Cannot find TLS address via pthread_self()."))
+                log.error("Cannot find TLS address via pthread_self().")
         return tls_address
 
     def brute_force_tls_reference_in_got_section(
@@ -1832,7 +1832,7 @@ class HeuristicHeap(
         else:
             got_address = pwndbg.glibc.get_section_address_by_name(".got")
         if not got_address:
-            print(message.warn("Cannot find the address of the .got section."))
+            log.warning("Cannot find the address of the .got section.")
             return None
         s_int = (
             pwndbg.gdblib.memory.s32
@@ -1944,7 +1944,7 @@ class HeuristicHeap(
         and if that fails, we guess it's at the first chunk of the heap.
         """
         if not self.has_tcache():
-            print(message.warn("This version of GLIBC was not compiled with tcache support."))
+            log.warning("This version of GLIBC was not compiled with tcache support.")
             return None
         tps = self.tcache_perthread_struct
         thread_cache_via_config = int(str(pwndbg.config.tcache), 0)

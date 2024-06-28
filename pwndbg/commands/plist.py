@@ -175,11 +175,11 @@ def plist(path, next, sentinel, inner_name, field_name) -> None:
     try:
         first = gdb.parse_and_eval(path)
     except gdb.error as e:
-        print(message.error(f"{e}"))
+        log.error(f"{e}")
         return
 
     if first.is_optimized_out:
-        print(message.error(f"{path} has been optimized out"))
+        log.error(f"{path} has been optimized out")
         return
 
     # We suport being passed either a pointer to the first structure or the
@@ -194,19 +194,19 @@ def plist(path, next, sentinel, inner_name, field_name) -> None:
         try:
             first = first.dereference()
         except gdb.error as e:
-            print(message.error(f"Pointer at {path} could not be dereferenced: {e}"))
+            log.error(f"Pointer at {path} could not be dereferenced: {e}")
             return
 
     if first.type.code == gdb.TYPE_CODE_PTR:
-        print(message.error(f"{path} is not a value or a single pointer to one"))
+        log.error(f"{path} is not a value or a single pointer to one")
         return
 
     if first.address is None:
-        print(message.error(f"{deref}{path} is not addressable"))
+        log.error(f"{deref}{path} is not addressable")
         return
 
     if first.is_optimized_out:
-        print(message.error(f"{deref}{path} has been optimized out"))
+        log.error(f"{deref}{path} has been optimized out")
         return
 
     # If there is an inner element we have to use, find it.
@@ -217,10 +217,10 @@ def plist(path, next, sentinel, inner_name, field_name) -> None:
             inner = first[inner_name]
             inner_sep = "->"
         except gdb.error as e:
-            print(message.error(f"Cannot find component {inner_name} in {path}: {e}"))
+            log.error(f"Cannot find component {inner_name} in {path}: {e}")
             return
         if inner.is_optimized_out:
-            print(message.error(f"{path}{sep}{inner_name} has been optimized out"))
+            log.error(f"{path}{sep}{inner_name} has been optimized out")
             return
 
     # Resolve the pointer to the next structure, wherever it may be, and make
@@ -235,14 +235,14 @@ def plist(path, next, sentinel, inner_name, field_name) -> None:
             next_ptr_loc = inner
             next_ptr_name = f"{inner_name}.{next}"
     except gdb.error as e:
-        print(message.error(f"Cannot find component {next_ptr_name} in {path}: {e}"))
+        log.error(f"Cannot find component {next_ptr_name} in {path}: {e}")
         return
 
     if next_ptr.is_optimized_out:
-        print(message.error(f"{path}{sep}{next_ptr_name} has been optimized out"))
+        log.error(f"{path}{sep}{next_ptr_name} has been optimized out")
         return
     if next_ptr.type.code != gdb.TYPE_CODE_PTR:
-        print(message.error(f"{path}{sep}{next_ptr_name} is not a pointer"))
+        log.error(f"{path}{sep}{next_ptr_name} is not a pointer")
         return
 
     # If the user wants a specific field to be displayed, resolve it.
@@ -252,7 +252,7 @@ def plist(path, next, sentinel, inner_name, field_name) -> None:
         try:
             field = first[field_name]
         except gdb.error as e:
-            print(message.error(f"Cannot find component {field_name} in {path}: {e}"))
+            log.error(f"Cannot find component {field_name} in {path}: {e}")
             return
         field_type = field.type
 
@@ -375,8 +375,8 @@ def plist(path, next, sentinel, inner_name, field_name) -> None:
 
             print(f"{target_address:#x} {symbol}: {value}")
         except gdb.error as e:
-            print(message.error(f"Cannot dereference 0x{address:#x} for list link #{i + 1}: {e}"))
-            print(message.error("Is the linked list corrupted or is the sentinel value wrong?"))
+            log.error(f"Cannot dereference 0x{address:#x} for list link #{i + 1}: {e}")
+            log.error("Is the linked list corrupted or is the sentinel value wrong?")
             return
 
 

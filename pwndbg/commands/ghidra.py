@@ -23,4 +23,4 @@ def ghidra(func) -> None:
     try:
         print(pwndbg.ghidra.decompile(func))
     except Exception as e:
-        print(message.error(e))
+        log.error(e)

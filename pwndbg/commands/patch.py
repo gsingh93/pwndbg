@@ -64,7 +64,7 @@ def patch_revert(address: int) -> None:
         pwndbg.gdblib.memory.write(address, old)
         print(message.notice("Reverted patch at %#x" % address))
     else:
-        print(message.error("Address %#x not found in patch list" % address))
+        log.error("Address %#x not found in patch list" % address)
 
     pwndbg.lib.cache.clear_caches()
 

@@ -90,13 +90,13 @@ def cyclic_cmd(alphabet, length: Optional[int], lookup, count=100, filename="") 
         )
 
         if any(c not in alphabet for c in lookup):
-            print(message.error("Pattern contains characters not present in the alphabet"))
+            log.error("Pattern contains characters not present in the alphabet")
             return
 
         offset = cyclic_find(lookup, alphabet, length)
 
         if offset == -1:
-            print(message.error("Given lookup pattern does not exist in the sequence"))
+            log.error("Given lookup pattern does not exist in the sequence")
         else:
             print(message.success(f"Found at offset {offset}"))
     else:

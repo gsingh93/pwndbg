@@ -61,6 +61,6 @@ def r2pipe(arguments) -> None:
         r2 = pwndbg.radare2.r2pipe()
         print(r2.cmd(" ".join(arguments)))
     except ImportError:
-        print(message.error("Could not import r2pipe python library"))
+        log.error("Could not import r2pipe python library")
     except Exception as e:
-        print(message.error(e))
+        log.error(e)

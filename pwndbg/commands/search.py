@@ -260,7 +260,7 @@ def search(
         mappings = [m for m in mappings if mapping_name in m.objfile]
 
     if not mappings:
-        print(message.error("Could not find mapping %r" % mapping_name))
+        log.error("Could not find mapping %r" % mapping_name)
         return
 
     # If next is passed, only perform a manual search over previously saved addresses

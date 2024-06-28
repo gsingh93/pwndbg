@@ -371,7 +371,7 @@ def _update_watchpoints() -> None:
         try:
             dynamic = pwndbg.gdblib.dynamic.DynamicSegment(obj.dynamic(), obj.load_bias())
         except RuntimeError as e:
-            print(message.warn(f"object {name} has invalid DYNAMIC section: {e}"))
+            log.warning(f"object {name} has invalid DYNAMIC section: {e}")
             continue
 
         jump_slots = JUMP_SLOTS[pwndbg.gdblib.arch.name]

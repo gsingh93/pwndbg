@@ -31,7 +31,7 @@ def ignore(bpnum, count) -> None:
     bps = gdb.breakpoints()
 
     if not bps:
-        print(message.error("No breakpoints set."))
+        log.error("No breakpoints set.")
         return
 
     if bpnum is None:
@@ -40,7 +40,7 @@ def ignore(bpnum, count) -> None:
         bp = next((bp for bp in bps if bp.number == bpnum), None)
 
         if bp is None:
-            print(message.error("No breakpoint number %d." % bpnum))
+            log.error("No breakpoint number %d." % bpnum)
             return
 
     count = max(0, int(count))

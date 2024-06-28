@@ -79,7 +79,7 @@ def update() -> None:
         importlib.reload(pwndbg.lib.elftypes)
 
     except ImportError:
-        print(message.warn("Failed to reload pwndbg.lib.elftypes"))
+        log.warning("Failed to reload pwndbg.lib.elftypes")
         pass
 
     if pwndbg.gdblib.arch.ptrsize == 4:

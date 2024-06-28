@@ -133,7 +133,7 @@ def leakfind(
     # Just warn the user that a large depth might be slow.
     # Probably worth checking offset^depth < threshold. Do this when more benchmarking is established.
     if max_depth > 8:
-        print(message.warn("leakfind may take a while to run on larger depths."))
+        log.warning("leakfind may take a while to run on larger depths.")
 
     stride = step
     address = int(address)

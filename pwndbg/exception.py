@@ -114,7 +114,7 @@ def handle(name="Error"):
     else:
         exc_type, exc_value, exc_traceback = sys.exc_info()
 
-        print(message.error(f"Exception occurred: {name}: {exc_value} ({exc_type})"))
+        log.error(f"Exception occurred: {name}: {exc_value} ({exc_type})")
 
         inform_verbose_and_debug()
 

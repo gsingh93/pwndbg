@@ -77,13 +77,13 @@ def attachp(no_truncate, target) -> None:
             try:
                 pids = check_output(["pidof", target]).decode().rstrip("\n").split(" ")
             except FileNotFoundError:
-                print(message.error("Error: did not find `pidof` command"))
+                log.error("Error: did not find `pidof` command")
                 return
             except CalledProcessError:
                 pids = []
 
             if not pids:
-                print(message.error(f"Process {target} not found"))
+                log.error(f"Process {target} not found")
                 return
 
             if len(pids) > 1:
@@ -112,13 +112,13 @@ def attachp(no_truncate, target) -> None:
                         ]
                     ).decode()
                 except FileNotFoundError:
-                    print(message.error("Error: did not find `ps` command"))
+                    log.error("Error: did not find `ps` command")
                     print(
                         message.warn(f"Use `attach <pid>` instead (found pids: {', '.join(pids)})")
                     )
                     return
                 except CalledProcessError:
-                    print(message.error("Error: failed to get process details"))
+                    log.error("Error: failed to get process details")
                     print(
                         message.warn(f"Use `attach <pid>` instead (found pids: {', '.join(pids)})")
                     )
@@ -165,7 +165,7 @@ def attachp(no_truncate, target) -> None:
                     print(message.notice(msg))
 
                     if method == _NONE:
-                        print(message.warn("use `attach <pid>` to attach"))
+                        log.warning("use `attach <pid>` to attach")
                         return
                     elif method == _ASK:
                         while True:
@@ -191,7 +191,7 @@ def attachp(no_truncate, target) -> None:
     try:
         gdb.execute(f"attach {resolved_target}")
     except gdb.error as e:
-        print(message.error(f"Error: {e}"))
+        log.error(f"Error: {e}")
         return
 
 

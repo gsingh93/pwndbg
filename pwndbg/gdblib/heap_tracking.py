@@ -474,7 +474,7 @@ class ReallocExitBreakpoint(gdb.FinishBreakpoint):
         return False
 
     def out_of_scope(self) -> None:
-        print(message.warn(f"warning: could not follow free request for chunk {self.ptr:#x}"))
+        log.warning(f"warning: could not follow free request for chunk {self.ptr:#x}")
         self.tracker.exit_memory_management()
 
 
@@ -523,7 +523,7 @@ class FreeExitBreakpoint(gdb.FinishBreakpoint):
         return False
 
     def out_of_scope(self) -> None:
-        print(message.warn(f"warning: could not follow free request for chunk {self.ptr:#x}"))
+        log.warning(f"warning: could not follow free request for chunk {self.ptr:#x}")
         self.tracker.exit_memory_management()
 
 
@@ -568,10 +568,10 @@ def install(disable_hardware_watchpoints=True) -> None:
     available = [resolve_address(name) for name in required_symbols]
 
     if not all(available):
-        print(message.error("The following required symbols are not available:"))
+        log.error("The following required symbols are not available:")
         for name in (x[0] for x in zip(required_symbols, available) if not x[1]):
-            print(message.error(f"    - {name}"))
-        print(message.error(f"Make sure {LIBC_NAME} has already been loaded."))
+            log.error(f"    - {name}")
+        log.error(f"Make sure {LIBC_NAME} has already been loaded.")
 
         return
 
@@ -586,7 +586,7 @@ def install(disable_hardware_watchpoints=True) -> None:
             "This feature is experimental and is known to report false positives, take the"
         )
     )
-    print(message.warn("diagnostics it procudes with a grain of salt. Use at your own risk."))
+    log.warning("diagnostics it procudes with a grain of salt. Use at your own risk.")
     print()
 
     # Disable hardware watchpoints.

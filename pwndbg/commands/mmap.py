@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from typing import Union
 
 import pwndbg.chain
@@ -13,6 +14,8 @@ import pwndbg.lib.memory
 import pwndbg.wrappers.checksec
 import pwndbg.wrappers.readelf
 from pwndbg.commands import CommandCategory
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawTextHelpFormatter,

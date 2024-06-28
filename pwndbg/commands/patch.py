@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from typing import Dict
 from typing import Tuple
 
@@ -14,6 +15,8 @@ import pwndbg.commands
 import pwndbg.gdblib.memory
 import pwndbg.lib.cache
 from pwndbg.color import message
+
+log = logging.getLogger(__name__)
 
 # Keep old patches made so we can revert them
 patches: Dict[int, Tuple[bytearray, bytearray]] = {}

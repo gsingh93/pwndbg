@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import functools
+import logging
 import os
 import subprocess
 import sys
@@ -34,6 +35,8 @@ import pwndbg.lib.config
 import pwndbg.lib.gcc
 import pwndbg.lib.tempfile
 from pwndbg.color import message
+
+log = logging.getLogger(__name__)
 
 P = ParamSpec("P")
 T = TypeVar("T")

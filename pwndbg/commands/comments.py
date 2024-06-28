@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from typing import Dict
 
 import pwndbg.commands
-from pwndbg.color import message
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="Put comments in assembly code.")
 parser.add_argument(

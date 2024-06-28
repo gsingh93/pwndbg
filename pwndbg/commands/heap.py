@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+import logging
 from string import printable
 from typing import Dict
 from typing import List
@@ -35,6 +36,8 @@ from pwndbg.gdblib.heap.ptmalloc import Chunk
 from pwndbg.gdblib.heap.ptmalloc import DebugSymsHeap
 from pwndbg.gdblib.heap.ptmalloc import GlibcMemoryAllocator
 from pwndbg.gdblib.heap.ptmalloc import Heap
+
+log = logging.getLogger(__name__)
 
 
 def read_chunk(addr: int) -> Dict[str, int]:

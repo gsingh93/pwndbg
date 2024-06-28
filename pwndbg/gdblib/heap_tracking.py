@@ -49,6 +49,7 @@ that were not made explicit.
 
 from __future__ import annotations
 
+import logging
 from typing import Dict
 
 import gdb
@@ -60,6 +61,8 @@ import pwndbg.gdblib.heap.ptmalloc
 import pwndbg.gdblib.symbol
 import pwndbg.lib.cache
 from pwndbg.color import message
+
+log = logging.getLogger(__name__)
 
 LIBC_NAME = "libc.so.6"
 MALLOC_NAME = "malloc"

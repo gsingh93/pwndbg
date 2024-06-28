@@ -14,6 +14,10 @@ try:
 except ImportError:
     import pdb
 
+import logging
+
+log = logging.getLogger(__name__)
+
 _rich_console = None
 
 

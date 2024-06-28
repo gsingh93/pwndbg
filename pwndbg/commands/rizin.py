@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import subprocess
 
 import pwndbg.commands
 import pwndbg.rizin
-from pwndbg.color import message
 from pwndbg.commands import CommandCategory
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="Launches rizin.", epilog="Example: rz -- -S -AA")
 parser.add_argument("--no-seek", action="store_true", help="Do not seek to current pc")

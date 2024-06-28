@@ -12,6 +12,7 @@ that may have a somewhat obtuse beahvior, due to limitations in GDB. See
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -27,6 +28,8 @@ import pwndbg.gdblib.memory
 import pwndbg.gdblib.typeinfo
 import pwndbg.lib.cache
 from pwndbg.lib.elftypes import constants as elf
+
+log = logging.getLogger(__name__)
 
 
 def _r_debug():

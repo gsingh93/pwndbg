@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import binascii
 import codecs
+import logging
 import os
 import struct
 from typing import Set
@@ -18,8 +19,9 @@ import pwndbg.gdblib.arch
 import pwndbg.gdblib.disasm
 import pwndbg.gdblib.vmmap
 import pwndbg.search
-from pwndbg.color import message
 from pwndbg.commands import CommandCategory
+
+log = logging.getLogger(__name__)
 
 saved: Set[int] = set()
 

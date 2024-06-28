@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import string
 from typing import Optional
 
@@ -11,6 +12,8 @@ from pwnlib.util.cyclic import cyclic_find
 import pwndbg.commands
 import pwndbg.gdblib.arch
 from pwndbg.color import message
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="Cyclic pattern creator/finder.")
 

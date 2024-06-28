@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import logging
 import os
 import sys
 from collections import defaultdict
@@ -37,6 +38,8 @@ from pwndbg.color import ColorParamSpec
 from pwndbg.color import message
 from pwndbg.color import theme
 from pwndbg.commands import CommandCategory
+
+log = logging.getLogger(__name__)
 
 theme.add_param("backtrace-prefix", "►", "prefix for current backtrace label")
 

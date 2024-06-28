@@ -12,6 +12,7 @@ if sys.version_info >= (3, 11):
 else:
     from enum import Enum
 
+import logging
 import typing
 from typing import Any
 from typing import Callable
@@ -43,6 +44,8 @@ import pwndbg.search
 from pwndbg.color import message
 from pwndbg.color.memory import c as M
 from pwndbg.constants import ptmalloc
+
+log = logging.getLogger(__name__)
 
 # The `pwndbg.gdblib.heap.structs` module is only imported at runtime when
 # the heap heuristics are used in `HeuristicHeap.struct_module` and

@@ -5,6 +5,7 @@ Command to print the information of the current Thread Local Storage (TLS).
 from __future__ import annotations
 
 import argparse
+import logging
 
 import gdb
 from tabulate import tabulate
@@ -14,6 +15,8 @@ import pwndbg.commands
 import pwndbg.gdblib.tls
 from pwndbg.color import message
 from pwndbg.commands import CommandCategory
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawTextHelpFormatter,

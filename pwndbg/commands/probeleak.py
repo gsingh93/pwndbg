@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import math
 import os
 
@@ -13,6 +14,8 @@ import pwndbg.gdblib.elf
 import pwndbg.gdblib.vmmap
 from pwndbg.color import message
 from pwndbg.commands import CommandCategory
+
+log = logging.getLogger(__name__)
 
 
 def find_module(addr, max_distance):

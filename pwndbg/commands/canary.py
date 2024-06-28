@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 
 import pwndbg.auxv
 import pwndbg.commands
@@ -11,6 +12,7 @@ import pwndbg.search
 from pwndbg.color import message
 from pwndbg.commands import CommandCategory
 
+log = logging.getLogger(__name__)
 DEFAULT_NUM_CANARIES_TO_DISPLAY = 1
 
 

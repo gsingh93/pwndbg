@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 
 import gdb
 from capstone import CS_GRP_JUMP
@@ -12,6 +13,8 @@ import pwndbg.gdblib.disasm
 import pwndbg.gdblib.disasm.arch
 import pwndbg.gdblib.next
 from pwndbg.gdblib.disasm.instruction import PwndbgInstruction
+
+log = logging.getLogger(__name__)
 
 
 class BreakOnConditionalBranch(pwndbg.gdblib.bpoint.Breakpoint):

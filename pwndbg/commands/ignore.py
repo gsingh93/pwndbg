@@ -5,12 +5,14 @@ Ignoring a breakpoint
 from __future__ import annotations
 
 import argparse
+import logging
 
 import gdb
 
 import pwndbg.commands
-from pwndbg.color import message
 from pwndbg.commands import CommandCategory
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawTextHelpFormatter,

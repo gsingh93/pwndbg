@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 
 import gdb
@@ -8,8 +9,9 @@ import gdb
 import pwndbg.auxv
 import pwndbg.commands
 import pwndbg.gdblib.vmmap
-from pwndbg.color import message
 from pwndbg.commands import CommandCategory
+
+log = logging.getLogger(__name__)
 
 
 def get_exe_name():

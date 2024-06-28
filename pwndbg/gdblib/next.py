@@ -5,6 +5,7 @@ instruction of some type (call, branch, etc.)
 
 from __future__ import annotations
 
+import logging
 import re
 from itertools import chain
 
@@ -15,8 +16,9 @@ import pwndbg.gdblib.disasm
 import pwndbg.gdblib.events
 import pwndbg.gdblib.proc
 import pwndbg.gdblib.regs
-from pwndbg.color import message
 from pwndbg.gdblib.disasm.instruction import ALL_JUMP_GROUPS
+
+log = logging.getLogger(__name__)
 
 interrupts = {capstone.CS_GRP_INT}
 

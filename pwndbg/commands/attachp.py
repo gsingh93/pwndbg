@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import stat
 from subprocess import CalledProcessError
@@ -15,6 +16,7 @@ from pwndbg.color import message
 from pwndbg.commands import CommandCategory
 from pwndbg.ui import get_window_size
 
+log = logging.getLogger(__name__)
 _NONE = "none"
 _OLDEST = "oldest"
 _NEWEST = "newest"

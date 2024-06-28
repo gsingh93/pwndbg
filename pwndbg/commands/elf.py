@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import logging
+
 from elftools.elf.elffile import ELFFile
 
 import pwndbg.commands
 from pwndbg.color import message
 from pwndbg.commands import CommandCategory
+
+log = logging.getLogger(__name__)
 
 
 @pwndbg.commands.ArgparsedCommand(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 
 import gdb
 
@@ -8,6 +9,8 @@ import pwndbg.chain
 import pwndbg.commands
 import pwndbg.gdblib.memory
 from pwndbg.color import message
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawTextHelpFormatter,

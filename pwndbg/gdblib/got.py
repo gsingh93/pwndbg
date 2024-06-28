@@ -12,6 +12,7 @@ injecting our own code into the program space to track this.
 
 from __future__ import annotations
 
+import logging
 from typing import Dict
 from typing import List
 from typing import Set
@@ -27,6 +28,8 @@ import pwndbg.gdblib.memory
 import pwndbg.gdblib.shellcode
 import pwndbg.gdblib.typeinfo
 import pwndbg.gdblib.vmmap
+
+log = logging.getLogger(__name__)
 
 
 class RelocTypes:

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import errno
 import functools
+import logging
 import socket
 import sys
 import time
@@ -32,6 +33,8 @@ import pwndbg.gdblib.memory
 import pwndbg.gdblib.regs
 import pwndbg.lib.cache
 from pwndbg.color import message
+
+log = logging.getLogger(__name__)
 
 ida_rpc_host = pwndbg.config.add_param("ida-rpc-host", "127.0.0.1", "ida xmlrpc server address")
 ida_rpc_port = pwndbg.config.add_param("ida-rpc-port", 31337, "ida xmlrpc server port")

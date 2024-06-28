@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import ctypes
 import importlib
+import logging
 import sys
 from typing import Dict
 from typing import List
@@ -39,7 +40,8 @@ import pwndbg.gdblib.vmmap
 import pwndbg.lib.cache
 import pwndbg.lib.elftypes
 import pwndbg.lib.memory
-from pwndbg.color import message
+
+log = logging.getLogger(__name__)
 
 # ELF constants
 PF_X, PF_W, PF_R = 1, 2, 4

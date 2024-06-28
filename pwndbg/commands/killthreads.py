@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from typing import List
 
 import gdb
@@ -9,6 +10,8 @@ import pwndbg.commands
 from pwndbg.color import message
 from pwndbg.commands import CommandCategory
 from pwndbg.gdblib.scheduler import lock_scheduler
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawTextHelpFormatter,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from typing import Dict
 from typing import List
 from typing import Union
@@ -22,6 +23,8 @@ import pwndbg.wrappers.readelf
 from pwndbg.color import message
 from pwndbg.commands import CommandCategory
 from pwndbg.wrappers.readelf import RelocationType
+
+log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawTextHelpFormatter,

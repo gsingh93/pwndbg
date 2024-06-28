@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import re
 from typing import Any
 from typing import Dict
 
-import pwndbg.color.message as message
 import pwndbg.gdblib.dynamic
 import pwndbg.gdblib.got
 import pwndbg.gdblib.proc
 from pwndbg.commands import CommandCategory
+
+log = logging.getLogger(__name__)
 
 
 def columns(rows, colors=None) -> None:

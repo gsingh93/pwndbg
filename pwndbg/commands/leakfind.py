@@ -5,6 +5,7 @@ Find a chain of leaks given some starting address.
 from __future__ import annotations
 
 import argparse
+import logging
 import queue
 from typing import Dict
 from typing import List
@@ -16,8 +17,9 @@ import pwndbg.color.memory as M
 import pwndbg.commands
 import pwndbg.gdblib.vmmap
 from pwndbg.chain import c as C
-from pwndbg.color import message
 from pwndbg.commands import CommandCategory
+
+log = logging.getLogger(__name__)
 
 
 # Used to recursively print the pointer chain.

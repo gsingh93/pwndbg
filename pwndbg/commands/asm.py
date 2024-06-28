@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import logging
 
 import pwnlib
 import pwnlib.context
 
 import pwndbg.commands
-from pwndbg.color import message
+
+log = logging.getLogger(__name__)
+
 
 parser = argparse.ArgumentParser(description="Assemble shellcode into bytes")
 
